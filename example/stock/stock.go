@@ -18,21 +18,8 @@ const (
 )
 
 var (
-	indexes = []map[string]*Index{
-		{"s_sh000001": nil}, // 上证指数
-		{"s_sz399001": nil}, // 深证指数
-	}
-
-	stocks = []map[string]*Stock{
-		{"sh600291": nil}, // 西水股份
-		{"sh603393": nil}, // 新天然气
-		{"sh603551": nil},
-		{"sh601872": nil},
-		{"sh601519": nil},
-		{"sh600968": nil},
-		{"sh600900": nil},
-		{"sh512290": nil},
-	}
+	indexes []*Index
+	stocks  []*Stock
 )
 
 func httpGet(url string) (string, error) {
@@ -59,11 +46,8 @@ func parseIndexes(str string) {
 		if len(match) >= 3 {
 			var index Index
 			if index.Parse(strings.Trim(match[2], ",")) == nil {
-				for i, _ := range indexes {
-					if _, ok := indexes[i][match[1]]; ok {
-						indexes[i][match[1]] = &index
-					}
-				}
+				index.Code = match[1]
+				indexes = append(indexes, &index)
 			}
 		}
 	}
@@ -75,11 +59,8 @@ func parseStocks(str string) {
 		if len(match) >= 3 {
 			var stock Stock
 			if stock.Parse(strings.Trim(match[2], ",")) == nil {
-				for i, _ := range stocks {
-					if _, ok := stocks[i][match[1]]; ok {
-						stocks[i][match[1]] = &stock
-					}
-				}
+				stock.Code = match[1]
+				stocks = append(stocks, &stock)
 			}
 		}
 	}
@@ -95,16 +76,12 @@ func display() {
 	table.SetAlignment(tablewriter.ALIGN_RIGHT)
 
 	for _, v := range stocks {
-		for _, vv := range v {
-			table.Append(EnumValues(*vv))
-		}
+		table.Append(EnumValues(*v))
 	}
 	table.Render()
 
 	for _, v := range indexes {
-		for _, vv := range v {
-			fmt.Println(vv)
-		}
+		fmt.Println(v)
 	}
 }
 
@@ -112,12 +89,13 @@ func main() {
 	log.Init("")
 	log.SetLevel(log.LevelDebug)
 
+	config := Config{FilePath: "config.json"}
+	config.Load()
+
 	do := func() {
 		req := url
-		for _, v := range indexes {
-			for k, _ := range v {
-				req += k + ","
-			}
+		for _, v := range config.Indexes {
+			req += v + ","
 		}
 		resp, err := httpGet(req)
 		if err != nil {
@@ -127,10 +105,8 @@ func main() {
 		parseIndexes(resp)
 
 		req = url
-		for _, v := range stocks {
-			for k, _ := range v {
-				req += k + ","
-			}
+		for _, v := range config.Stocks {
+			req += v + ","
 		}
 		resp, err = httpGet(req)
 		if err != nil {

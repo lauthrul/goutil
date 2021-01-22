@@ -9,6 +9,7 @@ import (
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type Index struct {
+	Code          string          `name:"-"`
 	Name          string          `name:"名称"`      // 0："上证指数", 指数名称
 	Last          decimal.Decimal `name:"当前点数"`    // 1："3565.9046", 当前点数
 	Change        decimal.Decimal `name:"涨跌"`      // 2："-32.7472", 当前价格
@@ -47,6 +48,7 @@ func (i *Index) Parse(str string) error {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type Stock struct {
+	Code           string          `name:"-"`
 	Name           string          `name:"名称"`  // 0：”大秦铁路”，股票名字；
 	TodayOpen      decimal.Decimal `name:"今开"`  // 1：”27.55″，今日开盘价；
 	YesterdayClose decimal.Decimal `name:"昨收"`  // 2：”27.25″，昨日收盘价；
