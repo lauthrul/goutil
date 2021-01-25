@@ -201,3 +201,26 @@ func Test_write(t *testing.T) {
 func Test_writeF(t *testing.T) {
 
 }
+
+func TestSetFlag(t *testing.T) {
+	Init("")
+	SetLevel(LevelDebug)
+	SetFlag(LstdFlags | Lmicroseconds | Lshortfile)
+	DebugF("this is Debug log: %d, %s", 123, "hahahh")
+	RemoveFlag(Lmicroseconds)
+	InfoF("this is Info log: %d, %s", 123, "hahahh")
+	RemoveFlag(Lshortfile)
+	WarnF("this is Warn log: %d, %s", 123, "hahahh")
+	AppendFlag(Lmicroseconds)
+	ErrorF("this is Error log: %d, %s", 123, "hahahh")
+	AppendFlag(Llongfile)
+	FatalF("this is Fatal log: %d, %s", 123, "hahahh")
+}
+
+func TestAppendFlag(t *testing.T) {
+
+}
+
+func TestRemoveFlag(t *testing.T) {
+
+}
