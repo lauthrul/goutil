@@ -1,13 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/lauthrul/goutil/log"
 	"github.com/olekukonko/tablewriter"
-	"io/ioutil"
-	"net/http"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpproxy"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -18,19 +18,28 @@ const (
 )
 
 var (
+	proxy   string
 	indexes []*Index
 	stocks  []*Stock
 )
 
-func httpGet(url string) (string, error) {
-	resp, err := http.Get(url)
+func httpGet(uri string) (string, error) {
+	cli := &fasthttp.Client{}
+	if proxy != "" {
+		cli.Dial = fasthttpproxy.FasthttpHTTPDialer(proxy)
+	}
+
+	req := fasthttp.AcquireRequest()
+	req.SetRequestURI(uri)
+
+	resp := fasthttp.AcquireResponse()
+	err := cli.Do(req, resp)
 	if err != nil {
+		log.Error(req.URI(), err)
 		return "", err
 	}
-	bytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+
+	bytes := resp.Body()
 	data := Convert(bytes, GB18030)
 	//log.Debug(resp)
 	return data, nil
@@ -41,6 +50,7 @@ var (
 )
 
 func parseIndexes(str string) {
+	indexes = nil
 	matches := reg.FindAllStringSubmatch(str, -1)
 	for _, match := range matches {
 		if len(match) >= 3 {
@@ -54,6 +64,7 @@ func parseIndexes(str string) {
 }
 
 func parseStocks(str string) {
+	stocks = nil
 	matches := reg.FindAllStringSubmatch(str, -1)
 	for _, match := range matches {
 		if len(match) >= 3 {
@@ -67,9 +78,7 @@ func parseStocks(str string) {
 }
 
 func display() {
-	cmd := exec.Command("cmd", "/c", "cls")
-	cmd.Stdout = os.Stdout
-	cmd.Run()
+	ClearConsole()
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(EnumNames(Stock{}))
@@ -86,6 +95,9 @@ func display() {
 }
 
 func main() {
+	flag.StringVar(&proxy, "proxy", "", "proxy host:port")
+	flag.Parse()
+
 	log.Init("")
 	log.SetLevel(log.LevelDebug)
 
@@ -99,7 +111,7 @@ func main() {
 		}
 		resp, err := httpGet(req)
 		if err != nil {
-			log.ErrorF("httpGet err=", err)
+			log.Error("httpGet err=", err)
 			return
 		}
 		parseIndexes(resp)
@@ -110,7 +122,7 @@ func main() {
 		}
 		resp, err = httpGet(req)
 		if err != nil {
-			log.ErrorF("httpGet err=", err)
+			log.Error("httpGet err=", err)
 			return
 		}
 		parseStocks(resp)
