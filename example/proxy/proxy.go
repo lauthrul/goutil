@@ -47,10 +47,8 @@ func runModHttp() {
 
 		uri := string(ctx.RequestURI())
 		uri = strings.TrimLeft(uri, "/")
-		method := string(ctx.Method())
-		req.Header.SetMethod(method)
+		*req = ctx.Request
 		req.SetRequestURI(uri)
-		req.SetBody(ctx.Request.Body())
 
 		err := fasthttp.Do(req, resp)
 		if err != nil {
