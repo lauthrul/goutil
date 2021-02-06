@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	json = jsoniter.ConfigCompatibleWithStandardLibrary
+	Json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 func Convert(byte []byte, charset Charset) string {

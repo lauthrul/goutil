@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/lauthrul/goutil/util"
 	"github.com/shopspring/decimal"
 	"strings"
 )
@@ -36,11 +37,11 @@ func (i *Index) Parse(str string) error {
 	}
 
 	i.Name = arr[0]
-	i.Last = Str2Decimal(arr[1])
-	i.Change = Str2Decimal(arr[2])
-	i.ChangePercent = Str2Decimal(arr[3])
-	i.Volume = Str2Decimal(arr[4])
-	i.Amount = Str2Decimal(arr[5])
+	i.Last = util.Str2Decimal(arr[1])
+	i.Change = util.Str2Decimal(arr[2])
+	i.ChangePercent = util.Str2Decimal(arr[3])
+	i.Volume = util.Str2Decimal(arr[4])
+	i.Amount = util.Str2Decimal(arr[5])
 
 	return nil
 }
@@ -106,35 +107,35 @@ func (s *Stock) Parse(str string) error {
 	}
 
 	s.Name = arr[0]
-	s.TodayOpen = Str2Decimal(arr[1])
-	s.YesterdayClose = Str2Decimal(arr[2])
-	s.Current = Str2Decimal(arr[3])
-	s.TodayHighest = Str2Decimal(arr[4])
-	s.TodayLowest = Str2Decimal(arr[5])
-	s.CurrentBuy = Str2Decimal(arr[6])
-	s.CurrentSell = Str2Decimal(arr[7])
-	s.Volume = Str2Decimal(arr[8])
-	s.Amount = Str2Decimal(arr[9])
-	s.Buy1Amount = Str2Decimal(arr[10])
-	s.Buy1 = Str2Decimal(arr[11])
-	s.Buy2Amount = Str2Decimal(arr[12])
-	s.Buy2 = Str2Decimal(arr[13])
-	s.Buy3Amount = Str2Decimal(arr[14])
-	s.Buy3 = Str2Decimal(arr[15])
-	s.Buy4Amount = Str2Decimal(arr[16])
-	s.Buy4 = Str2Decimal(arr[17])
-	s.Buy5Amount = Str2Decimal(arr[18])
-	s.Buy5 = Str2Decimal(arr[19])
-	s.Sell1Amount = Str2Decimal(arr[20])
-	s.Sell1 = Str2Decimal(arr[21])
-	s.Sell2Amount = Str2Decimal(arr[22])
-	s.Sell2 = Str2Decimal(arr[23])
-	s.Sell3Amount = Str2Decimal(arr[24])
-	s.Sell3 = Str2Decimal(arr[25])
-	s.Sell4Amount = Str2Decimal(arr[26])
-	s.Sell4 = Str2Decimal(arr[27])
-	s.Sell5Amount = Str2Decimal(arr[28])
-	s.Sell5 = Str2Decimal(arr[29])
+	s.TodayOpen = util.Str2Decimal(arr[1])
+	s.YesterdayClose = util.Str2Decimal(arr[2])
+	s.Current = util.Str2Decimal(arr[3])
+	s.TodayHighest = util.Str2Decimal(arr[4])
+	s.TodayLowest = util.Str2Decimal(arr[5])
+	s.CurrentBuy = util.Str2Decimal(arr[6])
+	s.CurrentSell = util.Str2Decimal(arr[7])
+	s.Volume = util.Str2Decimal(arr[8])
+	s.Amount = util.Str2Decimal(arr[9])
+	s.Buy1Amount = util.Str2Decimal(arr[10])
+	s.Buy1 = util.Str2Decimal(arr[11])
+	s.Buy2Amount = util.Str2Decimal(arr[12])
+	s.Buy2 = util.Str2Decimal(arr[13])
+	s.Buy3Amount = util.Str2Decimal(arr[14])
+	s.Buy3 = util.Str2Decimal(arr[15])
+	s.Buy4Amount = util.Str2Decimal(arr[16])
+	s.Buy4 = util.Str2Decimal(arr[17])
+	s.Buy5Amount = util.Str2Decimal(arr[18])
+	s.Buy5 = util.Str2Decimal(arr[19])
+	s.Sell1Amount = util.Str2Decimal(arr[20])
+	s.Sell1 = util.Str2Decimal(arr[21])
+	s.Sell2Amount = util.Str2Decimal(arr[22])
+	s.Sell2 = util.Str2Decimal(arr[23])
+	s.Sell3Amount = util.Str2Decimal(arr[24])
+	s.Sell3 = util.Str2Decimal(arr[25])
+	s.Sell4Amount = util.Str2Decimal(arr[26])
+	s.Sell4 = util.Str2Decimal(arr[27])
+	s.Sell5Amount = util.Str2Decimal(arr[28])
+	s.Sell5 = util.Str2Decimal(arr[29])
 	s.Date = arr[30]
 	s.Time = arr[31]
 	s.Change = s.Current.Sub(s.YesterdayClose)

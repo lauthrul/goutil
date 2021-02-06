@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/lauthrul/goutil/util"
 	"io/ioutil"
 )
 
@@ -27,5 +28,5 @@ func (c *Config) LoadFile(file string) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(data, c)
+	return util.Json.Unmarshal(data, c)
 }

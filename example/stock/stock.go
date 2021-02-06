@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/lauthrul/goutil/log"
+	"github.com/lauthrul/goutil/util"
 	"github.com/olekukonko/tablewriter"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpproxy"
@@ -40,7 +41,7 @@ func httpGet(uri string) (string, error) {
 	}
 
 	bytes := resp.Body()
-	data := Convert(bytes, GB18030)
+	data := util.Convert(bytes, util.GB18030)
 	//log.Debug(resp)
 	return data, nil
 }
@@ -78,14 +79,14 @@ func parseStocks(str string) {
 }
 
 func display() {
-	ClearConsole()
+	util.ClearConsole()
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(EnumNames(Stock{}))
+	table.SetHeader(util.EnumNames(Stock{}))
 	table.SetAlignment(tablewriter.ALIGN_RIGHT)
 
 	for _, v := range stocks {
-		table.Append(EnumValues(*v))
+		table.Append(util.EnumValues(*v))
 	}
 	table.Render()
 
