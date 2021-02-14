@@ -4,31 +4,14 @@ import (
 	"flag"
 	"github.com/lauthrul/goutil/http"
 	"github.com/lauthrul/goutil/log"
-	"github.com/lauthrul/goutil/util"
-	"github.com/olekukonko/tablewriter"
-	"os"
 	"time"
 )
-
-func display(funds []Fund) {
-	util.ClearConsole()
-
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(Fund{}.GetTitles())
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
-
-	for _, v := range funds {
-		table.Append(v.GetValues())
-	}
-	table.Render()
-}
 
 func main() {
 	var (
 		proxy     string
 		cacheFile string
 		verbose   bool
-		err       error
 	)
 
 	flag.StringVar(&proxy, "proxy", "", "Proxy host:port")
@@ -60,9 +43,16 @@ func main() {
 	//	_ = SaveCache(cache, cacheFile)
 	//}
 
-	funds, err := FundMarketList()
-	if err != nil {
-		return
+	app := App{
+		updateInterval: 10 * time.Second,
+		updateFunc: func(app *App) {
+			funds, err := FundMarketList()
+			if err != nil {
+				return
+			}
+			app.Update(funds)
+		},
 	}
-	display(funds)
+	app.Init()
+	app.Run()
 }
