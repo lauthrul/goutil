@@ -1,7 +1,9 @@
-package main
+package model
 
 import (
 	"fmt"
+	"fund/common"
+	"fund/lang"
 	"github.com/lauthrul/goutil/log"
 	"github.com/lauthrul/goutil/util"
 	"github.com/shopspring/decimal"
@@ -97,8 +99,25 @@ type Fund struct {
 }
 
 func (f Fund) GetTitles() []string {
-	return []string{"代码", "基金", "类型", "规模", "成立时间", "经理", "净值", "累计净值", "日期",
-		"日涨幅", "今年以来涨幅", "近1月涨幅", "近3月涨幅", "近6月涨幅", "近1年涨幅", "近3年涨幅", "成立以来涨幅"}
+	return []string{
+		lang.Text(common.Lan, "thCode"),
+		lang.Text(common.Lan, "thName"),
+		lang.Text(common.Lan, "thType"),
+		lang.Text(common.Lan, "thScale"),
+		lang.Text(common.Lan, "thFoundTime"),
+		lang.Text(common.Lan, "thManager"),
+		lang.Text(common.Lan, "thNet"),
+		lang.Text(common.Lan, "thTotalNet"),
+		lang.Text(common.Lan, "thDate"),
+		lang.Text(common.Lan, "thDateRate"),
+		lang.Text(common.Lan, "thThisYearRate"),
+		lang.Text(common.Lan, "thMonthRate"),
+		lang.Text(common.Lan, "th3MonthRate"),
+		lang.Text(common.Lan, "th6MonthRate"),
+		lang.Text(common.Lan, "thYearRate"),
+		lang.Text(common.Lan, "th3YearRate"),
+		lang.Text(common.Lan, "thSinceFoundRate"),
+	}
 }
 
 func formatIncratio(incratio string) string {
@@ -190,7 +209,7 @@ func FundMarketList() ([]Fund, error) {
 		Time:      time.Now().Unix(),
 	}
 	url := fundUrl + "?" + arg.String()
-	resp, err := client.Get(url)
+	resp, err := common.Client.Get(url)
 	if err != nil {
 		log.Error(err)
 		return nil, err

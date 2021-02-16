@@ -1,7 +1,8 @@
-package main
+package model
 
 import (
 	"fmt"
+	"fund/common"
 	"github.com/lauthrul/goutil/log"
 	"github.com/valyala/fastjson"
 	"strings"
@@ -16,7 +17,7 @@ func FundListUpdateCheck(cache *FundCache) (bool, error) {
 	url := fmt.Sprintf(fundListUrl, time.Now().Format("20060102150405"))
 
 	// HEAD
-	resp, err := client.Head(url)
+	resp, err := common.Client.Head(url)
 	if err != nil {
 		log.Error(err)
 		return false, err
@@ -32,7 +33,7 @@ func FundListUpdateCheck(cache *FundCache) (bool, error) {
 	}
 
 	// GET
-	resp, err = client.Get(url)
+	resp, err = common.Client.Get(url)
 	if err != nil {
 		log.Error(err)
 		return false, err

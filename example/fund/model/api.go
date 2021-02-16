@@ -1,4 +1,4 @@
-package main
+package model
 
 const (
 	fundListUrl = "http://fund.eastmoney.com/js/fundcode_search.js?v=%s" // ?v=20210204133444
