@@ -59,7 +59,8 @@ func Init(filePath string) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		mv = io.MultiWriter(os.Stdout, file)
+		//mv = io.MultiWriter(os.Stdout, file)
+		mv = file
 	}
 	logger = log.New(mv, "", LstdFlags|Lmicroseconds|Lshortfile)
 }
