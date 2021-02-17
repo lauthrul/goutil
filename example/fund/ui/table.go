@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fund/model"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -73,14 +74,16 @@ func NewTB() *TB {
 		Table:   tview.NewTable(),
 		headers: nil,
 	}
-	tb.SetSeparator('|').SetSelectable(true, false)
+	tb/*.SetSeparator('|')*/.SetSelectable(true, false)
 	return tb
 }
 
-func (tb *TB) SetHeaders(texts ...string) *TB {
-	for i, h := range texts {
-		th := NewTH(" "+h, tb)
+func (tb *TB) SetHeaders(refs ...model.THReference) *TB {
+	for i, r := range refs {
+		th := NewTH(" "+r.Text, tb)
 		th.col = i
+		th.EnableOrder = r.EnableOrder
+		th.SetReference(r.OrderFiled)
 		// default header attributions, can set by call tview.TableCell functions with tb.Header[i]
 		th.SetAlign(tview.AlignCenter).
 			SetTextColor(tcell.ColorBlack).
@@ -88,15 +91,6 @@ func (tb *TB) SetHeaders(texts ...string) *TB {
 			SetSelectable(false)
 		tb.SetCell(0, i, th.TableCell)
 		tb.headers = append(tb.headers, th)
-	}
-	return tb
-}
-
-func (tb *TB) SetReferences(refs ...interface{}) *TB {
-	for i, ref := range refs {
-		if h := tb.headers[i]; h != nil {
-			h.SetReference(ref)
-		}
 	}
 	return tb
 }

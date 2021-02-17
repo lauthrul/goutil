@@ -17,7 +17,7 @@ var langEN = map[string]string{
 	"thNet":            "Net.",
 	"thTotalNet":       "Total Net.",
 	"thDate":           "Date",
-	"thDateRate":       "%",
+	"thDateRate":       "D%",
 	"thThisYearRate":   "Y-%",
 	"thMonthRate":      "M%",
 	"th3MonthRate":     "3M%",

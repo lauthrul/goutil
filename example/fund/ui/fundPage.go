@@ -46,13 +46,10 @@ func (f *FundPage) create() {
 		SetBorderPadding(0, 0, 2, 2)
 
 	// table
-	titles := []string{ /*" ", */ "#"}
-	titles = append(titles, model.Fund{}.GetTitles()...)
-	refs := []interface{}{ /*"", */ ""}
-	refs = append(refs, model.Fund{}.GetReferences()...)
+	refs := []model.THReference{ /*{" ", false, ""},*/ {"#", false, ""}}
+	refs = append(refs, model.Fund{}.GetTHReference()...)
 	table := NewTB()
-	table.SetHeaders(titles...).
-		SetReferences(refs...).
+	table.SetHeaders(refs...).
 		SetOrderFunc(f.onTableOrderChange)
 	table.SetBackgroundColor(bgColor)
 

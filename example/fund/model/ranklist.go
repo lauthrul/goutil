@@ -98,47 +98,31 @@ type Fund struct {
 	MinValue    string `json:"min_value"` // 起购金额
 }
 
-func (f Fund) GetTitles() []string {
-	return []string{
-		lang.Text(common.Lan, "thCode"),
-		lang.Text(common.Lan, "thName"),
-		lang.Text(common.Lan, "thType"),
-		lang.Text(common.Lan, "thScale"),
-		lang.Text(common.Lan, "thFoundTime"),
-		lang.Text(common.Lan, "thManager"),
-		lang.Text(common.Lan, "thNet"),
-		lang.Text(common.Lan, "thTotalNet"),
-		lang.Text(common.Lan, "thDate"),
-		lang.Text(common.Lan, "thDateRate"),
-		lang.Text(common.Lan, "thThisYearRate"),
-		lang.Text(common.Lan, "thMonthRate"),
-		lang.Text(common.Lan, "th3MonthRate"),
-		lang.Text(common.Lan, "th6MonthRate"),
-		lang.Text(common.Lan, "thYearRate"),
-		lang.Text(common.Lan, "th3YearRate"),
-		lang.Text(common.Lan, "thSinceFoundRate"),
-	}
+type THReference struct {
+	Text        string
+	EnableOrder bool
+	OrderFiled  string
 }
 
-func (f Fund) GetReferences() []interface{} {
-	return []interface{}{
-		"",
-		"",
-		"",
-		"fund_scale",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"day_incratio",
-		"this_year_incratio",
-		"month_incratio",
-		"quarter_incratio",
-		"half_year_incratio",
-		"year_incratio",
-		"",
-		"",
+func (f Fund) GetTHReference() []THReference {
+	return []THReference{
+		{lang.Text(common.Lan, "thCode"), true, ""},
+		{lang.Text(common.Lan, "thName"), false, ""},
+		{lang.Text(common.Lan, "thType"), false, ""},
+		{lang.Text(common.Lan, "thScale"), true, "fund_scale"},
+		{lang.Text(common.Lan, "thFoundTime"), false, ""},
+		{lang.Text(common.Lan, "thManager"), false, ""},
+		{lang.Text(common.Lan, "thNet"), true, "netvalue"},
+		{lang.Text(common.Lan, "thTotalNet"), false, ""},
+		{lang.Text(common.Lan, "thDate"), false, ""},
+		{lang.Text(common.Lan, "thDateRate"), true, "day_incratio"},
+		{lang.Text(common.Lan, "thMonthRate"), true, "month_incratio"},
+		{lang.Text(common.Lan, "th3MonthRate"), true, "quarter_incratio"},
+		{lang.Text(common.Lan, "th6MonthRate"), true, "half_year_incratio"},
+		{lang.Text(common.Lan, "thYearRate"), true, "year_incratio"},
+		{lang.Text(common.Lan, "thThisYearRate"), true, "this_year_incratio"},
+		{lang.Text(common.Lan, "th3YearRate"), false, ""},
+		{lang.Text(common.Lan, "thSinceFoundRate"), false, ""},
 	}
 }
 
@@ -161,11 +145,11 @@ func (f Fund) GetValues() []string {
 	return []string{
 		f.FundCode, f.FundName, f.Type2IdDesc, f.FundScale, f.CTime, manager, f.Netvalue, f.TotalNetvalue, f.Navdate,
 		formatIncratio(f.DayIncratio),
-		formatIncratio(f.ThisYearIncratio),
 		formatIncratio(f.MonthIncratio),
 		formatIncratio(f.QuarterIncratio),
 		formatIncratio(f.HalfYearIncratio),
 		formatIncratio(f.YearIncratio),
+		formatIncratio(f.ThisYearIncratio),
 		formatIncratio(f.ThreeYearIncratio),
 		formatIncratio(f.ToThisDayIncratio),
 	}
