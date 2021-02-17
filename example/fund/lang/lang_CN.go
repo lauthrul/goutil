@@ -5,6 +5,9 @@ var langCN = map[string]string{
 	"menuFund":         "基金",
 	"navRank":          "排行", // nav
 	"navFav":           "自选",
+	"btnPrevPage":      "<<",
+	"btnNextPage":      ">>",
+	"btnGo":            "跳转",
 	"thCode":           "代码", // table
 	"thName":           "基金",
 	"thType":           "类型",

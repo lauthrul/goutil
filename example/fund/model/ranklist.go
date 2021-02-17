@@ -120,6 +120,28 @@ func (f Fund) GetTitles() []string {
 	}
 }
 
+func (f Fund) GetReferences() []interface{} {
+	return []interface{}{
+		"",
+		"",
+		"",
+		"fund_scale",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"day_incratio",
+		"this_year_incratio",
+		"month_incratio",
+		"quarter_incratio",
+		"half_year_incratio",
+		"year_incratio",
+		"",
+		"",
+	}
+}
+
 func formatIncratio(incratio string) string {
 	value := util.Str2Decimal(incratio)
 	s := value.Mul(decimal.NewFromInt(100)).StringFixed(2) + "%"
@@ -193,45 +215,48 @@ func (a Args) String() string {
 	)
 }
 
-func FundMarketList() ([]Fund, error) {
+type Result struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Data struct {
+		Items     []Fund `json:"items"`
+		PageSize  int    `json:"page_size"`
+		PageNo    int    `json:"page_no"`
+		PageTotal string `json:"page_total"`
+	} `json:"data"`
+}
+
+func FundMarketList(page, size int, order, orderType string) (Result, error) {
+	var result Result
+
 	arg := Args{
 		Tab:       1,
-		PageSize:  20,
-		PageNo:    0,
+		PageSize:  size,
+		PageNo:    page,
 		FundCode:  "",
 		Type:      "",
 		Company:   "",
 		Scale:     "",
 		Status:    "1",
 		S:         "",
-		Order:     "day_incratio",
-		OrderType: "desc",
+		Order:     order,
+		OrderType: orderType,
 		Time:      time.Now().Unix(),
 	}
 	url := fundUrl + "?" + arg.String()
 	resp, err := common.Client.Get(url)
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return result, err
 	}
 
-	var result struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-		Data struct {
-			Items     []Fund `json:"items"`
-			PageSize  int    `json:"page_size"`
-			PageNo    int    `json:"page_no"`
-			PageTotal string `json:"page_total"`
-		} `json:"data"`
-	}
 	body := string(resp.Body())
 	body = strings.ReplaceAll(body, `"fund_manager":"",`, `"fund_manager":[],`)
 	err = util.Json.UnmarshalFromString(body, &result)
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return result, err
 	}
 
-	return result.Data.Items, err
+	return result, err
 }

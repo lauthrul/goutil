@@ -14,6 +14,14 @@ var (
 	layout *tview.Flex
 )
 
+var (
+	navBgColor  = tcell.NewHexColor(0x2b2b2b)
+	bgColor     = tcell.NewHexColor(0x313335)
+	btnColor    = tcell.NewHexColor(0x34424d)
+	edtColor    = tcell.NewHexColor(0x3e5c73)
+	borderColor = tcell.NewHexColor(0x555555)
+)
+
 func Run() {
 	app = tview.NewApplication()
 
@@ -21,7 +29,7 @@ func Run() {
 	nav = tview.NewList().
 		AddItem(lang.Text(common.Lan, "menuFund"), "", 0, onNavFund).
 		AddItem(lang.Text(common.Lan, "menuStock"), "", 0, onNavStock)
-	nav.SetBackgroundColor(tcell.NewHexColor(0x2b2b2b)).SetBorderPadding(2, 2, 1, 1)
+	nav.SetBackgroundColor(navBgColor).SetBorderPadding(2, 2, 1, 1)
 
 	// main part
 	pageFund := NewFundPage()

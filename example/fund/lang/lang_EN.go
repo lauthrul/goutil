@@ -5,6 +5,9 @@ var langEN = map[string]string{
 	"menuFund":         "Fund",
 	"navRank":          "Rank", // nav
 	"navFav":           "Fav",
+	"btnPrevPage":      "<<",
+	"btnNextPage":      ">>",
+	"btnGo":            "Go",
 	"thCode":           "Code", // table
 	"thName":           "Name",
 	"thType":           "Type",

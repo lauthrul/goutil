@@ -9,97 +9,101 @@ type Order = byte
 
 const (
 	NONE Order = 0
-	ASC        = 1
-	DESC       = 2
+	DESC       = 1
+	ASC        = 2
 )
 
 type TH struct {
 	*tview.TableCell
-	EnableSort bool
-	Col        int
-	order      Order
-	tb         *TB
+	EnableOrder bool
+	col         int
+	order       Order
+	tb          *TB
 }
 
 func NewTH(text string, tb *TB) *TH {
 	th := &TH{
-		TableCell:  tview.NewTableCell(text),
-		EnableSort: true,
-		tb:         tb,
+		TableCell:   tview.NewTableCell(text),
+		EnableOrder: true,
+		tb:          tb,
 	}
-	th.SetClickedFunc(th.DefaultClickedFunc)
+	th.SetClickedFunc(th.defaultClickedFunc)
 	return th
 }
 
-func (th *TH) DefaultClickedFunc() bool {
-	prefix := " "
-	// remove other col orders
-	if th.Col != th.tb.GetOrderCol() {
-		th.tb.SetOrderCol(th.Col)
-		for _, h := range th.tb.Headers {
+func (th *TH) defaultClickedFunc() bool {
+	if th.EnableOrder {
+		prefix := " "
+		// remove other col orders
+		for _, h := range th.tb.headers {
 			if h != th {
 				h.Text = prefix + string([]rune(h.Text)[1:])
-				h.SetOrder(NONE)
+				h.order = NONE
 			}
 		}
+		// set current col order
+		order := (th.order + 1) % 3
+		switch order {
+		case ASC:
+			prefix = "↑"
+		case DESC:
+			prefix = "↓"
+		}
+		th.Text = prefix + string([]rune(th.Text)[1:])
+		th.order = order
+		th.tb.orderCol = th.col
+		th.tb.orderType = order
+		if th.tb.orderFunc != nil {
+			th.tb.orderFunc(th.col, order)
+		}
 	}
-	// set current col order
-	order := (th.GetOrder() + 1) % 3
-	switch order {
-	case ASC:
-		prefix = "↑"
-	case DESC:
-		prefix = "↓"
-	}
-	th.Text = prefix + string([]rune(th.Text)[1:])
-	th.SetOrder(order)
 	return true
-}
-
-func (th *TH) SetOrder(order Order) {
-	th.order = order
-}
-
-func (th *TH) GetOrder() Order {
-	return th.order
 }
 
 type TB struct {
 	*tview.Table
-	Headers  []*TH
-	orderCol int
+	headers   []*TH
+	orderCol  int
+	orderType Order
+	orderFunc func(col int, order Order)
 }
 
 func NewTB() *TB {
 	tb := &TB{
-		Table:    tview.NewTable(),
-		Headers:  nil,
-		orderCol: 0,
+		Table:   tview.NewTable(),
+		headers: nil,
 	}
 	tb.SetSeparator('|').SetSelectable(true, false)
 	return tb
 }
 
-func (tb *TB) SetHeaders(texts ...string) {
+func (tb *TB) SetHeaders(texts ...string) *TB {
 	for i, h := range texts {
 		th := NewTH(" "+h, tb)
-		th.Col = i
+		th.col = i
 		// default header attributions, can set by call tview.TableCell functions with tb.Header[i]
 		th.SetAlign(tview.AlignCenter).
 			SetTextColor(tcell.ColorBlack).
 			SetBackgroundColor(tcell.ColorWhite).
 			SetSelectable(false)
 		tb.SetCell(0, i, th.TableCell)
-		tb.Headers = append(tb.Headers, th)
+		tb.headers = append(tb.headers, th)
 	}
+	return tb
 }
 
-func (tb *TB) SetOrderCol(col int) {
-	tb.orderCol = col
+func (tb *TB) SetReferences(refs ...interface{}) *TB {
+	for i, ref := range refs {
+		if h := tb.headers[i]; h != nil {
+			h.SetReference(ref)
+		}
+	}
+	return tb
 }
 
-func (tb *TB) GetOrderCol() int {
-	return tb.orderCol
+func (tb *TB) SetOrderFunc(f func(col int, order Order)) *TB {
+	tb.orderFunc = f
+	return tb
 }
 
 func (tb *TB) UpdateRow(row int, texts ...string) {

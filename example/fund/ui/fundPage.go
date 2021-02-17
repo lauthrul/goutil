@@ -1,0 +1,177 @@
+package ui
+
+import (
+	"fmt"
+	"fund/common"
+	"fund/lang"
+	"fund/model"
+	"github.com/gdamore/tcell/v2"
+	"github.com/lauthrul/goutil/log"
+	"github.com/rivo/tview"
+	"strconv"
+)
+
+const (
+	size = 20
+)
+
+type FundPage struct {
+	Page
+	btnPrev *tview.Button
+	btnNext *tview.Button
+	edit    *tview.InputField
+	total   *tview.TextView
+	btnGo   *tview.Button
+	curPage int
+}
+
+func NewFundPage() FundPage {
+	page := FundPage{
+		Page: NewPage(PageNameFund),
+	}
+	page.create()
+	return page
+}
+
+func (f *FundPage) create() {
+	// menu
+	menu := tview.NewTextView()
+	fmt.Fprintf(menu, `["%s"][white]%s[white][""]  `, MenuNameRank, lang.Text(common.Lan, "navRank"))
+	fmt.Fprintf(menu, `["%s"][white]%s[white][""]  `, MenuNameFav, lang.Text(common.Lan, "navFav"))
+	menu.SetRegions(true).
+		SetDynamicColors(true).
+		Highlight(MenuNameRank).
+		SetHighlightedFunc(f.onMenuChange)
+	menu.SetBackgroundColor(bgColor).
+		SetBorderPadding(0, 0, 2, 2)
+
+	// table
+	titles := []string{ /*" ", */ "#"}
+	titles = append(titles, model.Fund{}.GetTitles()...)
+	refs := []interface{}{ /*"", */ ""}
+	refs = append(refs, model.Fund{}.GetReferences()...)
+	table := NewTB()
+	table.SetHeaders(titles...).
+		SetReferences(refs...).
+		SetOrderFunc(f.onTableOrderChange)
+	table.SetBackgroundColor(bgColor)
+
+	// page navigator
+	box := tview.NewTextView().SetBackgroundColor(bgColor)
+	btnPrev := tview.NewButton(lang.Text(common.Lan, "btnPrevPage"))
+	btnPrev.SetSelectedFunc(f.onPrevPage)
+	btnPrev.SetBackgroundColor(btnColor)
+	btnNext := tview.NewButton(lang.Text(common.Lan, "btnNextPage"))
+	btnNext.SetSelectedFunc(f.onNextPage)
+	btnNext.SetBackgroundColor(btnColor)
+	edit := tview.NewInputField()
+	edit.SetFieldBackgroundColor(edtColor)
+	edit.SetDoneFunc(f.onEditDone)
+	total := tview.NewTextView()
+	total.SetBackgroundColor(edtColor)
+	btnGo := tview.NewButton(lang.Text(common.Lan, "btnGo"))
+	btnGo.SetSelectedFunc(f.onGoPage)
+	btnGo.SetBackgroundColor(btnColor)
+	pager := tview.NewFlex()
+	pager.SetDirection(tview.FlexColumn).
+		AddItem(box, 0, 8, false).
+		AddItem(edit, 8, 1, false).
+		AddItem(total, 8, 1, false).
+		AddItem(btnGo, 4, 1, false).
+		AddItem(btnPrev, 4, 1, false).
+		AddItem(btnNext, 4, 1, false)
+
+	// layout
+	layout := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(menu, 1, 1, false).
+		AddItem(table, 0, 5, false).
+		AddItem(pager, 1, 1, false)
+
+	f.menu = menu
+	f.table = table
+	f.btnPrev = btnPrev
+	f.btnNext = btnNext
+	f.edit = edit
+	f.total = total
+	f.btnGo = btnGo
+	f.Primitive = layout
+	f.update()
+}
+
+func (f *FundPage) update() {
+	f.updatePage(1, size, 0, NONE)
+}
+
+func (f *FundPage) onMenuChange(added, removed, remaining []string) {
+	log.Debug("switch menu:", added[0])
+}
+
+func (f *FundPage) onPrevPage() {
+	f.curPage -= 1
+	if f.curPage < 1 {
+		f.curPage = 1
+	}
+	log.Debug("prev page", f.curPage)
+	f.updatePage(f.curPage, size, f.table.orderCol, f.table.orderType)
+}
+
+func (f *FundPage) onNextPage() {
+	f.curPage += 1
+	log.Debug("next page", f.curPage)
+	f.updatePage(f.curPage, size, f.table.orderCol, f.table.orderType)
+}
+
+func (f *FundPage) onGoPage() {
+	n, err := strconv.Atoi(f.edit.GetText())
+	if err != nil {
+		log.Error("invalid page:", err.Error())
+		return
+	}
+	log.Debug("go page", n)
+	f.updatePage(n, size, f.table.orderCol, f.table.orderType)
+}
+
+func (f *FundPage) onEditDone(key tcell.Key) {
+	f.onGoPage()
+}
+
+func (f *FundPage) updatePage(page, pageSize, orderCol int, orderType Order) {
+	go func() {
+		orderFiled, order := "", "asc"
+		if h := f.table.headers[orderCol]; h != nil {
+			if ref, ok := h.Reference.(string); ok {
+				orderFiled = ref
+				if orderType == ASC {
+					order = "asc"
+				} else {
+					order = "desc"
+				}
+			}
+		}
+		result, err := model.FundMarketList(page, pageSize, orderFiled, order)
+		if err != nil {
+			return
+		}
+		for i, fund := range result.Data.Items {
+			f.curPage = result.Data.PageNo
+			values := []string{ /*"☆", */ fmt.Sprintf("%d", (page-1)*pageSize+i+1)}
+			values = append(values, fund.GetValues()...)
+			f.table.UpdateRow(i, values...)
+			f.edit.SetText(fmt.Sprintf("%d", f.curPage))
+			f.total.SetText("/" + result.Data.PageTotal)
+		}
+		count := len(result.Data.Items)
+		rows := f.table.GetRowCount() - 1
+		if count < rows {
+			for i := rows; i > count; i-- {
+				f.table.RemoveRow(i)
+			}
+		}
+		app.Draw()
+	}()
+}
+
+func (f *FundPage) onTableOrderChange(col int, order Order) {
+	log.Debug("order by", col, order)
+	f.updatePage(1, size, col, order)
+}
