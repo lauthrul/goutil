@@ -74,7 +74,7 @@ func NewTB() *TB {
 		Table:   tview.NewTable(),
 		headers: nil,
 	}
-	tb/*.SetSeparator('|')*/.SetSelectable(true, false)
+	tb.SetSeparator(tview.Borders.Vertical).SetSelectable(true, false)
 	return tb
 }
 
@@ -87,7 +87,7 @@ func (tb *TB) SetHeaders(refs ...model.THReference) *TB {
 		// default header attributions, can set by call tview.TableCell functions with tb.Header[i]
 		th.SetAlign(tview.AlignCenter).
 			SetTextColor(tcell.ColorBlack).
-			SetBackgroundColor(tcell.ColorWhite).
+			SetBackgroundColor(tcell.ColorGray).
 			SetSelectable(false)
 		tb.SetCell(0, i, th.TableCell)
 		tb.headers = append(tb.headers, th)

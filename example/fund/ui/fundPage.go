@@ -7,6 +7,7 @@ import (
 	"fund/model"
 	"github.com/gdamore/tcell/v2"
 	"github.com/lauthrul/goutil/log"
+	"github.com/lauthrul/goutil/util"
 	"github.com/rivo/tview"
 	"strconv"
 )
@@ -17,12 +18,13 @@ const (
 
 type FundPage struct {
 	Page
-	btnPrev *tview.Button
-	btnNext *tview.Button
-	edit    *tview.InputField
-	total   *tview.TextView
-	btnGo   *tview.Button
-	curPage int
+	btnPrev   *tview.Button
+	btnNext   *tview.Button
+	edit      *tview.InputField
+	total     *tview.TextView
+	btnGo     *tview.Button
+	curPage   int
+	totalPage int
 }
 
 func NewFundPage() FundPage {
@@ -47,7 +49,7 @@ func (f *FundPage) create() {
 
 	// table
 	refs := []model.THReference{ /*{" ", false, ""},*/ {"#", false, ""}}
-	refs = append(refs, model.Fund{}.GetTHReference()...)
+	refs = append(refs, api.GetTHReference()...)
 	table := NewTB()
 	table.SetHeaders(refs...).
 		SetOrderFunc(f.onTableOrderChange)
@@ -96,17 +98,25 @@ func (f *FundPage) create() {
 }
 
 func (f *FundPage) update() {
-	f.updatePage(1, size, 0, NONE)
+	f.updatePage(1, size, 1, ASC)
 }
 
 func (f *FundPage) onMenuChange(added, removed, remaining []string) {
-	log.Debug("switch menu:", added[0])
+	menu := added[0]
+	log.Debug("switch menu:", menu)
+	//if menu == MenuNameFav {
+	//	favs, err := model.FundFavList("210008", "007047")
+	//	if err != nil {
+	//		log.Error(err)
+	//	}
+	//	log.Debug(favs)
+	//}
 }
 
 func (f *FundPage) onPrevPage() {
 	f.curPage -= 1
 	if f.curPage < 1 {
-		f.curPage = 1
+		return
 	}
 	log.Debug("prev page", f.curPage)
 	f.updatePage(f.curPage, size, f.table.orderCol, f.table.orderType)
@@ -114,6 +124,9 @@ func (f *FundPage) onPrevPage() {
 
 func (f *FundPage) onNextPage() {
 	f.curPage += 1
+	if f.curPage > f.totalPage {
+		return
+	}
 	log.Debug("next page", f.curPage)
 	f.updatePage(f.curPage, size, f.table.orderCol, f.table.orderType)
 }
@@ -124,6 +137,10 @@ func (f *FundPage) onGoPage() {
 		log.Error("invalid page:", err.Error())
 		return
 	}
+	if n == f.curPage {
+		return
+	}
+	f.curPage = util.Clamp(f.curPage, 1, f.totalPage)
 	log.Debug("go page", n)
 	f.updatePage(n, size, f.table.orderCol, f.table.orderType)
 }
@@ -134,30 +151,40 @@ func (f *FundPage) onEditDone(key tcell.Key) {
 
 func (f *FundPage) updatePage(page, pageSize, orderCol int, orderType Order) {
 	go func() {
-		orderFiled, order := "", "asc"
+		sortCode, sortType := "", ""
 		if h := f.table.headers[orderCol]; h != nil {
 			if ref, ok := h.Reference.(string); ok {
-				orderFiled = ref
+				sortCode = ref
 				if orderType == ASC {
-					order = "asc"
-				} else {
-					order = "desc"
+					sortType = "asc"
+				} else if orderType == DESC {
+					sortType = "desc"
 				}
 			}
 		}
-		result, err := model.FundMarketList(page, pageSize, orderFiled, order)
+		result, err := api.GetFundRank(model.FundRankArg{
+			FundType:    "",
+			FundCompany: "",
+			SortCode:    sortCode,
+			SortType:    sortType,
+			StartDate:   "",
+			EndDate:     "",
+			PageIndex:   page,
+			PageNumber:  pageSize,
+		})
 		if err != nil {
 			return
 		}
-		for i, fund := range result.Data.Items {
-			f.curPage = result.Data.PageNo
+		for i, fund := range result.List {
+			f.curPage = result.PageIndex
+			f.totalPage = result.TotalPage
 			values := []string{ /*"☆", */ fmt.Sprintf("%d", (page-1)*pageSize+i+1)}
 			values = append(values, fund.GetValues()...)
 			f.table.UpdateRow(i, values...)
 			f.edit.SetText(fmt.Sprintf("%d", f.curPage))
-			f.total.SetText("/" + result.Data.PageTotal)
+			f.total.SetText(fmt.Sprintf("/%d", result.TotalPage))
 		}
-		count := len(result.Data.Items)
+		count := len(result.List)
 		rows := f.table.GetRowCount() - 1
 		if count < rows {
 			for i := rows; i > count; i-- {

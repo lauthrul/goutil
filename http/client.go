@@ -41,11 +41,16 @@ func (c *Client) Head(url string) (*fasthttp.Response, error) {
 	return c.resp, nil
 }
 
-func (c *Client) Get(url string) (*fasthttp.Response, error) {
+func (c *Client) Get(url string, headers map[string]string) (*fasthttp.Response, error) {
 	c.req.Reset()
 	c.resp.Reset()
 
 	c.req.SetRequestURI(url)
+	if len(headers) > 0 {
+		for k, v := range headers {
+			c.req.Header.Set(k, v)
+		}
+	}
 	c.req.Header.SetMethod("GET")
 
 	err := c.cli.Do(c.req, c.resp)
@@ -56,11 +61,16 @@ func (c *Client) Get(url string) (*fasthttp.Response, error) {
 	return c.resp, nil
 }
 
-func (c *Client) Post(url string, body []byte) (*fasthttp.Response, error) {
+func (c *Client) Post(url string, body []byte, headers map[string]string) (*fasthttp.Response, error) {
 	c.req.Reset()
 	c.resp.Reset()
 
 	c.req.SetRequestURI(url)
+	if len(headers) > 0 {
+		for k, v := range headers {
+			c.req.Header.Set(k, v)
+		}
+	}
 	c.req.Header.SetMethod("POST")
 	c.req.SetBody(body)
 

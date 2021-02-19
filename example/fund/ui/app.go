@@ -3,11 +3,13 @@ package ui
 import (
 	"fund/common"
 	"fund/lang"
+	"fund/model"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 var (
+	api    model.Api
 	app    *tview.Application
 	nav    *tview.List
 	pages  *tview.Pages
@@ -24,6 +26,7 @@ var (
 
 func Run() {
 	app = tview.NewApplication()
+	api = model.NewEastMoneyApi()
 
 	// nav part
 	nav = tview.NewList().

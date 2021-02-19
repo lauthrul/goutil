@@ -5,6 +5,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/shopspring/decimal"
 	"golang.org/x/text/encoding/simplifiedchinese"
+	"math"
 	"os"
 	"os/exec"
 	"reflect"
@@ -128,4 +129,12 @@ func ClearConsole() error {
 	default:
 		return fmt.Errorf("platform unsupported")
 	}
+}
+
+func Clamp(x, a, b int) int {
+	return int(math.Min(float64(b), math.Max(float64(x), float64(a))))
+}
+
+func ClampFloat(x, a, b float64) float64 {
+	return math.Min(b, math.Max(x, a))
 }
