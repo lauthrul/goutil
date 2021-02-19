@@ -21,51 +21,24 @@ func NewStockPage() StockPage {
 }
 
 func (s *StockPage) create() {
-	menu := tview.NewTextView()
-	fmt.Fprintf(menu, `["%s"][white]%s[white][""]  `, MenuNameFav, lang.Text(common.Lan, "navFav"))
-	menu.SetRegions(true).
+	s.menu = tview.NewTextView()
+	fmt.Fprintf(s.menu, `["%s"][white]%s[white][""]  `, MenuNameFav, lang.Text(common.Lan, "navFav"))
+	s.menu.SetRegions(true).
 		SetDynamicColors(true).
 		Highlight(MenuNameFav).
 		SetHighlightedFunc(s.onMenuChange)
-	menu.SetBackgroundColor(bgColor).
+	s.menu.SetBackgroundColor(bgColor).
 		SetBorderPadding(0, 0, 2, 2)
 
-	table := NewTB()
-	table.SetHeaders()
-	table.SetBackgroundColor(bgColor)
+	// pages
+	s.pages = tview.NewPages()
 
-	layout := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(menu, 1, 1, false).
-		AddItem(table, 0, 5, false)
-
-	s.menu = menu
-	s.table = table
-	s.Primitive = layout
-	s.update()
-}
-
-func (s *StockPage) update() {
-	//go func() {
-	//	ticker := time.NewTicker(5 * time.Second)
-	//	defer ticker.Stop()
-	//	for ; true; <-ticker.C {
-	//		// update stock
-	//	}
-	//}()
+	// layout
+	s.Primitive = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(s.menu, 1, 1, false).
+		AddItem(s.pages, 0, 5, false)
 }
 
 func (s *StockPage) onMenuChange(added, removed, remaining []string) {
 	log.Debug("switch menu:", added[0])
-}
-
-func (s *StockPage) onPrevPage() {
-	log.Debug("prev page")
-}
-
-func (s *StockPage) onNextPage() {
-	log.Debug("next page")
-}
-
-func (s *StockPage) onGoPage() {
-	log.Debug("go page")
 }

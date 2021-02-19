@@ -14,7 +14,7 @@ const (
 type Page struct {
 	tview.Primitive
 	menu  *tview.TextView
-	table *TB
+	pages *tview.Pages
 	Name  string
 }
 
@@ -22,14 +22,4 @@ func NewPage(name string) Page {
 	return Page{
 		Name: name,
 	}
-}
-
-type PageInterface interface {
-	create()
-	update()
-	onMenuChange(added, removed, remaining []string)
-	//onPrevPage()
-	//onNextPage()
-	//onGoPage()
-	//onTableOrderChange(col int, order Order)
 }
