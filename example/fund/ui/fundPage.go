@@ -38,7 +38,7 @@ func (f *FundPage) create() {
 
 	// pages
 	f.pages = tview.NewPages()
-	fundRankPage := NewFundRankPage()
+	fundRankPage := NewFundRankPage(f.pages)
 	f.pages.AddPage(MenuNameRank, fundRankPage, true, true)
 
 	// layout

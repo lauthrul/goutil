@@ -14,6 +14,8 @@ import (
 
 type FundRankPage struct {
 	tview.Primitive
+	parent    *tview.Pages
+	layout    *tview.Flex
 	table     *TB
 	btnPrev   *tview.Button
 	btnNext   *tview.Button
@@ -24,15 +26,18 @@ type FundRankPage struct {
 	totalPage int
 }
 
-func NewFundRankPage() FundRankPage {
-	f := FundRankPage{}
+func NewFundRankPage(parent *tview.Pages) FundRankPage {
+	f := FundRankPage{parent: parent}
 
 	// table
 	refs := []model.THReference{ /*{" ", false, ""},*/ {"#", false, ""}}
 	refs = append(refs, api.GetTHReference()...)
 	f.table = NewTB()
 	f.table.SetHeaders(refs...).
-		SetOrderFunc(f.onTableOrderChange)
+		SetOrderFunc(f.onTableOrderChange).
+		SetSelectionChangedFunc(f.onSelectChange).
+		SetSelectedFunc(f.onShowDetail).
+		SetMouseCapture(f.mouseCapture)
 	f.table.SetBackgroundColor(bgColor)
 
 	// page navigator
@@ -61,9 +66,10 @@ func NewFundRankPage() FundRankPage {
 		AddItem(f.btnNext, 4, 1, false)
 
 	// layout
-	f.Primitive = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(f.table, 0, 5, false).
+	f.layout = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(f.table, 0, 5, true).
 		AddItem(pager, 1, 1, false)
+	f.Primitive = f.layout
 
 	f.update()
 
@@ -142,6 +148,7 @@ func (f *FundRankPage) updatePage(page, pageSize, orderCol int, orderType Order)
 			values := []string{ /*"☆", */ fmt.Sprintf("%d", (page-1)*pageSize+i+1)}
 			values = append(values, fund.GetValues()...)
 			f.table.UpdateRow(i, values...)
+			f.table.GetCell(i, 0).SetReference(fund)
 			f.edit.SetText(fmt.Sprintf("%d", f.curPage))
 			f.total.SetText(fmt.Sprintf("/%d", result.TotalPage))
 		}
@@ -159,4 +166,45 @@ func (f *FundRankPage) updatePage(page, pageSize, orderCol int, orderType Order)
 func (f *FundRankPage) onTableOrderChange(col int, order Order) {
 	log.Debug("order by", col, order)
 	f.updatePage(1, size, col, order)
+}
+
+func (f *FundRankPage) onSelectChange(row, column int) {
+	log.Debug("select", row, column)
+}
+
+func (f *FundRankPage) onShowDetail(row, column int) {
+	log.Debug("show detail", row, column)
+	ref := f.table.GetCell(row, 0).GetReference()
+	if fund, ok := ref.(model.EastMoneyFund); ok {
+		log.DebugF("%+v", fund)
+		form := tview.NewForm().
+			AddInputField("Fund", fmt.Sprintf("%s %s", fund.Code, fund.Name), 20, nil, nil).
+			AddInputField("NetDate", fund.NetDate, 20, nil, nil).
+			AddInputField("NetValue", fmt.Sprintf("%s|%s", fund.NetValue, fund.TotalNetValue), 20, nil, nil).
+			AddButton("Save", nil).
+			AddButton("Quit", func() {
+				f.parent.RemovePage("form")
+			}).SetFocus(0)
+		title := fmt.Sprintf("%s %s", fund.Code, fund.Name)
+		form.SetBorder(true).SetTitle(title).SetTitleAlign(tview.AlignLeft).
+			SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyESC {
+					f.parent.RemovePage("form")
+				}
+				return event
+			})
+		modal := func(p tview.Primitive) tview.Primitive {
+			return tview.NewGrid().SetColumns(-1, -3, -1).SetRows(-1, -3, -1).AddItem(p, 1, 1, 1, 1, 0, 0, true)
+		}
+		f.parent.AddPage("form", modal(form), true, true).ShowPage("form")
+	}
+}
+
+func (f *FundRankPage) mouseCapture(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	row, col := f.table.GetSelection()
+	if action == tview.MouseLeftDoubleClick {
+		log.Debug("double click", row, col)
+		f.onShowDetail(row, col)
+	}
+	return action, event
 }
