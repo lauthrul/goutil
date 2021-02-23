@@ -44,7 +44,7 @@ func Run() {
 	// layout
 	layout = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(nav, 8, 1, false).
-		AddItem(pages, 0, 5, false)
+		AddItem(pages, 0, 5, true)
 
 	app.SetRoot(layout, true).EnableMouse(true)
 

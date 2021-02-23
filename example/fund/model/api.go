@@ -16,11 +16,7 @@ type Fund interface {
 	GetValues() []string
 }
 
-type FundEstimate interface {
-	GetTHReference() []THReference
-	GetValues() []string
-}
-
+// 基金列表
 type FundList struct {
 	List       []Fund
 	PageIndex  int
@@ -29,6 +25,7 @@ type FundList struct {
 	TotalCount int
 }
 
+// 基金排行请求参数
 type FundRankArg struct {
 	FundType    string `name:"ft"` // all-所有，gp-股票型，hh-混合型，zq-债券型，zs-指数型，qdii-QDII型，lof-LOF型，fof-FOF型
 	FundCompany string `name:"gs"` // 基金公司代码
@@ -69,8 +66,13 @@ func (f *FundRankArg) String() string {
 	)
 }
 
+// api接口
 type Api interface {
 	GetTHReference() []THReference
 	GetFundRank(arg FundRankArg) (FundList, error)
-	GetFundEstimate(fundCode string) (EastMoneyFundEstimate, error)
+	GetFundBasic(fundCode string) (FundBasic, error)
+	GetFundManager(fundCode string) ([]FundManager, error)
+	GetFundHoldingStock(fundCode string, year int) ([]FundHoldingStock, error)
+	GetFundNetValue(fundCode string, start, end string) ([]FundNetValue, error)
+	GetFundEstimate(fundCode string) (FundEstimate, error)
 }

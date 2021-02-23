@@ -1,0 +1,8 @@
+{
+    "enable_proxy": true,
+    "proxy": "34.92.193.98:10024",
+    "log_file": "log.txt",
+    "db_file": "fund.db",
+    "cache_file": "fund.cache",
+    "verbose": true
+}

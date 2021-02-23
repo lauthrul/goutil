@@ -1,13 +1,16 @@
 package model
 
 import (
+	"fmt"
 	"fund/common"
 	"fund/lang"
+	"github.com/antchfx/htmlquery"
 	"github.com/lauthrul/goutil/log"
 	"github.com/lauthrul/goutil/util"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type EastMoneyFund struct {
@@ -80,30 +83,26 @@ func (e EastMoneyFund) GetValues() []string {
 	}
 }
 
-type EastMoneyFundEstimate struct {
-	Code         string  `json:"fundcode"` // 基金代码 	519983
-	Name         string  `json:"name"`     // 基金简称 	长信量化先锋混合A
-	NetDate      string  `json:"jzrq"`     // 日期 		2018-09-21
-	NetValue     float32 `json:"dwjz"`     // 单位净值 	1.2440
-	EstimateNet  string  `json:"gsz"`      // 估算净值 	1.2388
-	LastDayNet   string  `json:"gszzl"`    // 估算增长率	-0.42
-	EstimateDate string  `json:"gztime"`   // 估值日期 	2018-09-25 15:00
-}
-
 type EastMoneyApi struct {
-	urlFundSearch string
-	urlRank       string
-	urlEstimate   string
-	referer       string
+	urlFundSearch   string
+	urlRank         string
+	urlEstimate     string
+	urlHoldingStock string
+	referer         string
 }
 
 func NewEastMoneyApi() *EastMoneyApi {
 	return &EastMoneyApi{
-		urlFundSearch: "http://fund.eastmoney.com/js/fundcode_search.js?v=%s", // http://fund.eastmoney.com/js/fundcode_search.js?v=20210204133444
-		urlRank:       "http://fund.eastmoney.com/data/rankhandler.aspx",      // http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=rzdf&st=desc&sd=2020-02-18&ed=2021-02-18&qdii=&tabSubtype=,,,,,&pi=1&pn=10&dx=1&v=0.29261668485886694
-		urlEstimate:   "http://fundgz.1234567.com.cn/js/%s.js?rt=%d",          // http://fundgz.1234567.com.cn/js/007047.js?rt=1612108800
-		referer:       "http://fundf10.eastmoney.com/",
+		urlFundSearch:   "http://fund.eastmoney.com/js/fundcode_search.js?v=%s",                                                  // http://fund.eastmoney.com/js/fundcode_search.js?v=20210204133444
+		urlRank:         "http://fund.eastmoney.com/data/rankhandler.aspx",                                                       // http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=rzdf&st=desc&sd=2020-02-18&ed=2021-02-18&qdii=&tabSubtype=,,,,,&pi=1&pn=10&dx=1&v=0.29261668485886694
+		urlEstimate:     "http://fundgz.1234567.com.cn/js/%s.js?rt=%d",                                                           // http://fundgz.1234567.com.cn/js/007047.js?rt=1612108800
+		urlHoldingStock: "http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=%s&topline=%d&year=%d&month=&rt=%s", // http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=007047&topline=10&year=2020&month=1&rt=0.6304561761132715
+		referer:         "http://fundf10.eastmoney.com/",
 	}
+}
+
+func (api *EastMoneyApi) GetRandom() string {
+	return fmt.Sprintf("0.%d", time.Now().Unix())
 }
 
 func (api *EastMoneyApi) GetTHReference() []THReference {
@@ -193,7 +192,80 @@ func (api *EastMoneyApi) GetFundRank(arg FundRankArg) (FundList, error) {
 	return funds, nil
 }
 
-func (api *EastMoneyApi) GetFundEstimate(fundCode string) (EastMoneyFundEstimate, error) {
-	var estimate EastMoneyFundEstimate
+func (api *EastMoneyApi) GetFundBasic(fundCode string) (FundBasic, error) {
+	var data FundBasic
+	return data, nil
+}
+
+func (api *EastMoneyApi) GetFundManager(fundCode string) ([]FundManager, error) {
+	var data []FundManager
+	return data, nil
+}
+
+func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundHoldingStock, error) {
+	url := fmt.Sprintf(api.urlHoldingStock, fundCode, 20, year, api.GetRandom())
+	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	body := string(resp.Body())
+	doc, err := htmlquery.Parse(strings.NewReader(body))
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error(err)
+		}
+	}()
+
+	var data []FundHoldingStock
+	nodes := htmlquery.Find(doc, "//div[@class='boxitem w790']")
+	for _, node := range nodes {
+		label := htmlquery.Find(node, ".//label[@class='left']/text()")[0]
+		date := htmlquery.Find(node, ".//label[@class='right lab2 xq505']/font/text()")[0]
+		trs := htmlquery.Find(node, ".//table[@class='w782 comm tzxq']/tbody/tr")
+		for _, tr := range trs {
+			item := FundHoldingStock{
+				Season:          strings.TrimSpace(label.Data),
+				Date:            strings.TrimSpace(date.Data),
+				StockCode:       strings.TrimSpace(htmlquery.Find(tr, "./td[2]/a/text()")[0].Data),      // 股票代码
+				StockName:       strings.TrimSpace(htmlquery.Find(tr, "./td[3]/a/text()")[0].Data),      // 股票名称
+				StockProportion: strings.TrimSpace(htmlquery.Find(tr, "./td[last()-2]/text()")[0].Data), // 持仓占净值比例
+				StockAmount:     strings.TrimSpace(htmlquery.Find(tr, "./td[last()-1]/text()")[0].Data), // 持仓股数，万股
+				StockValue:      strings.TrimSpace(htmlquery.Find(tr, "./td[last()]/text()")[0].Data),   // 持仓市值，万元
+			}
+			data = append(data, item)
+		}
+	}
+	return data, nil
+}
+
+func (api *EastMoneyApi) GetFundNetValue(fundCode string, start, end string) ([]FundNetValue, error) {
+	var data []FundNetValue
+	return data, nil
+}
+
+func (api *EastMoneyApi) GetFundEstimate(fundCode string) (FundEstimate, error) {
+	var estimate FundEstimate
+	url := fmt.Sprintf(api.urlEstimate, fundCode, api.GetRandom())
+	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
+	if err != nil {
+		log.Error(err)
+		return estimate, err
+	}
+
+	data := string(resp.Body())
+	data = data[strings.Index(data, "(")+1 : strings.Index(data, ")")]
+	err = util.Json.UnmarshalFromString(data, &estimate)
+	if err != nil {
+		log.Error(err)
+		return estimate, err
+	}
+
 	return estimate, nil
 }

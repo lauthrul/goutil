@@ -44,7 +44,7 @@ func (f *FundPage) create() {
 	// layout
 	f.Primitive = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(f.menu, 1, 1, false).
-		AddItem(f.pages, 0, 5, false)
+		AddItem(f.pages, 0, 5, true)
 }
 
 func (f *FundPage) onMenuChange(added, removed, remaining []string) {
