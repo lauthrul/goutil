@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func Init(conf config.Config) {
+func Init(conf *config.Config) {
 	log.Init(conf.LogFile)
 	if conf.Verbose {
 		log.SetLevel(log.LevelDebug)

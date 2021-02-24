@@ -71,7 +71,7 @@ type Api interface {
 	GetTHReference() []THReference
 	GetFundRank(arg FundRankArg) (FundList, error)
 	GetFundBasic(fundCode string) (FundBasic, error)
-	GetFundManager(fundCode string) ([]FundManager, error)
+	GetFundManager(fundCode string) ([]Manager, []ManagerExperience, error)
 	GetFundHoldingStock(fundCode string, year int) ([]FundHoldingStock, error)
 	GetFundNetValue(fundCode string, start, end string) ([]FundNetValue, error)
 	GetFundEstimate(fundCode string) (FundEstimate, error)

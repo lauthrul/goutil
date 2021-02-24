@@ -35,7 +35,7 @@ func FavCmd() *cobra.Command {
 					log.ErrorF("get fund[%s] basic fail: %s", code, err.Error())
 					continue
 				}
-				managers, err := api.GetFundManager(code)
+				managers, experiences, err := api.GetFundManager(code)
 				if err != nil {
 					log.ErrorF("get fund[%s] manager fail: %s", code, err.Error())
 					continue
@@ -51,7 +51,8 @@ func FavCmd() *cobra.Command {
 					continue
 				}
 				_ = model.SaveFundBasic(basic)
-				_ = model.SaveFundManager(managers...)
+				_ = model.SaveManager(managers...)
+				_ = model.SaveManagerExperience(experiences...)
 				_ = model.SaveFundStockHoldings(holdings...)
 				_ = model.SaveFundNetValue(netValues...)
 			}

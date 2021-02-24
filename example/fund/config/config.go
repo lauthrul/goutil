@@ -6,6 +6,10 @@ import (
 	"io/ioutil"
 )
 
+var (
+	Conf = &Config{}
+)
+
 type Config struct {
 	EnableProxy bool   `json:"enable_proxy"` // enable proxy
 	Proxy       string `json:"proxy"`        // http proxy [host:port]
@@ -15,26 +19,26 @@ type Config struct {
 	Verbose     bool   `json:"verbose"`      // log details as much as possible
 }
 
-func Load(filePath string) (config Config) {
+func Load(filePath string) *Config {
 	defer func() {
-		if config.LogFile == "" {
-			config.LogFile = "log.txt"
+		if Conf.LogFile == "" {
+			Conf.LogFile = "log.txt"
 		}
-		if config.DbFile == "" {
-			config.DbFile = "fund.db"
+		if Conf.DbFile == "" {
+			Conf.DbFile = "fund.db"
 		}
-		if config.CacheFile == "" {
-			config.CacheFile = "fund.cache"
+		if Conf.CacheFile == "" {
+			Conf.CacheFile = "fund.cache"
 		}
 	}()
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		fmt.Printf("read config file[%s] fail: %s\n", filePath, err.Error())
-		return config
+		return Conf
 	}
-	err = util.Json.Unmarshal(bytes, &config)
+	err = util.Json.Unmarshal(bytes, Conf)
 	if err != nil {
 		fmt.Printf("read config file[%s] fail: %s\n", filePath, err.Error())
 	}
-	return config
+	return Conf
 }

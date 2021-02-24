@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/antchfx/htmlquery v1.2.3
 	github.com/antchfx/xpath v1.1.11 // indirect
+	github.com/doug-martin/goqu/v9 v9.10.0
 	github.com/gdamore/tcell/v2 v2.1.0
 	github.com/lauthrul/goutil v0.0.0
 	github.com/mattn/go-sqlite3 v1.14.6
