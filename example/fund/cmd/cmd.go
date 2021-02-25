@@ -8,7 +8,7 @@ import (
 func Execute() {
 	rootCmd := RootCmd()
 	rootCmd.AddCommand(
-		FavCmd(),
+		InitCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

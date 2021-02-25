@@ -73,6 +73,6 @@ type Api interface {
 	GetFundBasic(fundCode string) (FundBasic, error)
 	GetFundManager(fundCode string) ([]Manager, []ManagerExperience, error)
 	GetFundHoldingStock(fundCode string, year int) ([]FundHoldingStock, error)
-	GetFundNetValue(fundCode string, start, end string) ([]FundNetValue, error)
+	GetFundNetValue(fundCode string, start, end string, page, pageSize int) ([]FundNetValue, int, error)
 	GetFundEstimate(fundCode string) (FundEstimate, error)
 }

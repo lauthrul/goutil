@@ -87,6 +87,7 @@ type FundNetValue struct {
 	Date          string  `db:"date"`
 	NetValue      float64 `db:"net_value"`
 	TotalNetValue float64 `db:"total_net_value"`
+	Growth        float64 `db:"growth"`
 }
 
 // 基金估值
@@ -111,27 +112,110 @@ func GetDB() *sql.DB {
 	return db
 }
 
-func SaveFundBasic(fund ...FundBasic) error {
-	stat, _, _ := dialect.Insert(tbBasic).Rows(fund).ToSQL()
-	_, err := GetDB().Exec(stat)
-	if err != nil {
-		log.ErrorF("%q: %s", err, stat)
+func SaveFundBasic(tx *sql.Tx, funds ...FundBasic) error {
+	for _, v := range funds {
+		stat, _, err := dialect.Insert(tbBasic).Rows(v).
+			OnConflict(goqu.DoUpdate("code", goqu.Record{
+				"latest_scale": v.LatestScale,
+				"update_date":  v.UpdateDate,
+				"manager_id":   v.ManagerID,
+				"manager_name": v.ManagerName,
+				"manage_exp":   v.ManageExp,
+				"trust_exp":    v.TrustExp,
+			})).ToSQL()
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+		// log.Debug(stat)
+		_, err = tx.Exec(stat)
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
 	}
-	return err
-}
-
-func SaveManager(manager ...Manager) error {
 	return nil
 }
 
-func SaveManagerExperience(experiences ...ManagerExperience) error {
+func SaveManager(tx *sql.Tx, managers ...Manager) error {
+	for _, v := range managers {
+		stat, _, err := dialect.Insert(tbManager).Rows(v).
+			OnConflict(goqu.DoUpdate("id", goqu.Record{
+				"work_days":     v.WorkDays,
+				"max_growth":    v.MaxGrowth,
+				"min_growth":    v.MinGrowth,
+				"ave_growth":    v.AveGrowth,
+				"holding_funds": v.HoldingFunds,
+				"resume":        v.Resume,
+			})).ToSQL()
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+		// log.Debug(stat)
+		_, err = tx.Exec(stat)
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+	}
 	return nil
 }
 
-func SaveFundNetValue(nets ...FundNetValue) error {
+func SaveManagerExperience(tx *sql.Tx, experiences ...ManagerExperience) error {
+	for _, v := range experiences {
+		stat, _, err := dialect.Insert(tbManagerExperience).Rows(v).OnConflict(goqu.DoNothing()).ToSQL()
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+		// log.Debug(stat)
+		_, err = tx.Exec(stat)
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+	}
 	return nil
 }
 
-func SaveFundStockHoldings(holdings ...FundHoldingStock) error {
+func SaveFundNetValue(tx *sql.Tx, nets ...FundNetValue) error {
+	for _, v := range nets {
+		stat, _, err := dialect.Insert(tbNetValue).Rows(v).OnConflict(goqu.DoNothing()).ToSQL()
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+		// log.Debug(stat)
+		_, err = tx.Exec(stat)
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+	}
+	return nil
+}
+
+func SaveFundStockHoldings(tx *sql.Tx, holdings ...FundHoldingStock) error {
+	for _, v := range holdings {
+		stat, _, err := dialect.Insert(tbHoldingStock).Rows(v).
+			OnConflict(goqu.DoUpdate("fund_code, season, stock_code", goqu.Record{
+				"fund_code":     v.FundCode,
+				"fund_name":     v.FundName,
+				"stock_percent": v.StockPercent,
+				"stock_amount":  v.StockAmount,
+				"stock_value":   v.StockValue,
+			})).ToSQL()
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+		// log.Debug(stat)
+		_, err = tx.Exec(stat)
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+	}
 	return nil
 }

@@ -117,6 +117,23 @@ type EastMoneyManager struct {
 	}
 }
 
+type EastMoneyFundNetValue struct {
+	Code          string
+	Date          string `json:"FSRQ"`
+	NetValue      string `json:"DWJZ"`
+	TotalNetValue string `json:"LJJZ"`
+	Growth        string `json:"JZZZL"`
+}
+
+type EastMoneyFundNetValueList struct {
+	Datas struct {
+		List []EastMoneyFundNetValue `json:"LSJZList"`
+	} `json:"Data"`
+	TotalCount int `json:"TotalCount"`
+	PageSize   int `json:"PageSize"`
+	PageIndex  int `json:"PageIndex"`
+}
+
 type EastMoneyApi struct {
 	urlFundSearch   string
 	urlRank         string
@@ -124,6 +141,7 @@ type EastMoneyApi struct {
 	urlManager      string
 	urlEstimate     string
 	urlHoldingStock string
+	urlNetValue     string
 	referer         string
 }
 
@@ -135,6 +153,7 @@ func NewEastMoneyApi() *EastMoneyApi {
 		urlManager:      "http://fundmobapi.eastmoney.com/FundMApi/FundMangerDetail.ashx?callback=jQuery%d&FCODE=%s&deviceid=Wap&plat=Wap&product=EFund&version=2.0.0&Uid=&_=%d",      // http://fundmobapi.eastmoney.com/FundMApi/FundMangerDetail.ashx?callback=jQuery31108228140360881444_1614155764008&FCODE=004707&deviceid=Wap&plat=Wap&product=EFund&version=2.0.0&Uid=&_=1614155764009
 		urlEstimate:     "http://fundgz.1234567.com.cn/js/%s.js?rt=%d",                                                                                                                // http://fundgz.1234567.com.cn/js/007047.js?rt=1612108800
 		urlHoldingStock: "http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=%s&topline=%d&year=%d&month=&rt=%s",                                                      // http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=007047&topline=10&year=2020&month=1&rt=0.6304561761132715
+		urlNetValue:     "http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery%d&fundCode=%s&pageIndex=%d&pageSize=%d&startDate=%s&endDate=%s&_=%d",                                 // http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery18305743557371800165_1613632567355&fundCode=003494&pageIndex=1&pageSize=20&startDate=2021-02-17&endDate=2021-02-17&_=1613632577360
 		referer:         "http://fundf10.eastmoney.com/",
 	}
 }
@@ -434,11 +453,14 @@ func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundH
 	var data []FundHoldingStock
 	nodes := htmlquery.Find(doc, "//div[@class='boxitem w790']")
 	for _, node := range nodes {
+		name := htmlquery.Find(node, ".//label[@class='left']/a/text()")[0]
 		label := []rune(strings.TrimSpace(htmlquery.Find(node, ".//label[@class='left']/text()")[0].Data))[0:8]
 		date := htmlquery.Find(node, ".//label[@class='right lab2 xq505']/font/text()")[0]
 		trs := htmlquery.Find(node, ".//table[contains(@class,'w782 comm tzxq')]/tbody/tr")
 		for _, tr := range trs {
 			item := FundHoldingStock{
+				FundCode:  fundCode,
+				FundName:  strings.TrimSpace(name.Data),
 				Season:    strings.TrimSpace(string(label)),
 				Date:      strings.TrimSpace(date.Data),
 				StockCode: strings.TrimSpace(htmlquery.Find(tr, "./td[2]/a/text()")[0].Data), // 股票代码
@@ -456,9 +478,40 @@ func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundH
 	return data, nil
 }
 
-func (api *EastMoneyApi) GetFundNetValue(fundCode string, start, end string) ([]FundNetValue, error) {
-	var data []FundNetValue
-	return data, nil
+func (api *EastMoneyApi) GetFundNetValue(fundCode string, start, end string, page, pageSize int) ([]FundNetValue, int, error) {
+	stamp := time.Now().Unix()
+	url := fmt.Sprintf(api.urlNetValue, stamp, fundCode, page, pageSize, start, end, stamp)
+	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
+	if err != nil {
+		log.Error(err)
+		return nil, 0, err
+	}
+
+	data := string(resp.Body())
+	data = data[strings.Index(data, "(")+1 : strings.LastIndex(data, ")")]
+	var result EastMoneyFundNetValueList
+	err = util.Json.UnmarshalFromString(data, &result)
+	if err != nil {
+		log.Error(err)
+		return nil, 0, err
+	}
+	var values []FundNetValue
+	for _, r := range result.Datas.List {
+		value := FundNetValue{
+			Code: fundCode,
+			Date: r.Date,
+		}
+		value.NetValue, _ = strconv.ParseFloat(r.NetValue, 64)
+		value.TotalNetValue, _ = strconv.ParseFloat(r.TotalNetValue, 64)
+		value.Growth, _ = strconv.ParseFloat(r.Growth, 64)
+		values = append(values, value)
+	}
+
+	nextPage := page + 1
+	if len(values) == 0 {
+		nextPage = 0
+	}
+	return values, nextPage, nil
 }
 
 func (api *EastMoneyApi) GetFundEstimate(fundCode string) (FundEstimate, error) {
