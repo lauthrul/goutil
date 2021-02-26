@@ -42,12 +42,16 @@ func InitCmd() *cobra.Command {
 			if len(codes) == 0 {
 				return
 			}
+
+			log.DebugF("fund init type:%s, funds:%s", typ, funds)
+
 			api := model.NewEastMoneyApi()
 
 			for _, code := range codes {
 				if code == "" {
 					continue
 				}
+				log.Debug("init fund", code)
 
 				tx, err := model.GetDB().Begin()
 				if err != nil {
@@ -71,7 +75,7 @@ func InitCmd() *cobra.Command {
 					}
 
 					createDate = basic.CreateDate
-					if date, err := time.Parse("2006-01-02", basic.CreateDate); err == nil {
+					if date, err := time.Parse(model.DATEFORMAT, basic.CreateDate); err == nil {
 						years = append(years, date.Year())
 						for y := date.Year() + 1; y <= time.Now().Year(); y++ {
 							years = append(years, y)
@@ -114,13 +118,17 @@ func InitCmd() *cobra.Command {
 
 				// get  and net values
 				if fnType("net_value") {
+					date, _ := model.GetNextFundNetValueDate(code)
+					if date == "" {
+						date = createDate
+					}
 					var netValues []model.FundNetValue
 					pageSize := 100
 					for page := 1; page != 0; {
 						values, nextPage, err := api.GetFundNetValue(
 							code,
-							createDate,
-							time.Now().Format("2006-01-02"),
+							date,
+							time.Now().Format(model.DATEFORMAT),
 							page,
 							pageSize,
 						)

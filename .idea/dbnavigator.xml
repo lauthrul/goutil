@@ -26,13 +26,23 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="524130cd-c14c-41a4-8ad1-7034898652dd">
-        <schema name="main" object-types="constraint, column, dataset trigger, view, table, index" />
+        <schema name="main" object-types="view, column, table" />
       </connection>
     </loaded-nodes>
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="524130cd-c14c-41a4-8ad1-7034898652dd">
-      <console name="Fund" type="STANDARD" schema="" session="Main" />
+      <console name="Fund" type="STANDARD" schema="main" session="Main"><![CDATA[--select stock_code, stock_name, count(1) as count from holding_stock where season='2020年4季度' group by stock_code order by count desc
+--select * from holding_stock where season='2020年4季度' and stock_code = '600519' order by stock_percent desc;
+
+--select * 
+--from holding_stock t1
+--where t1.code = code and t1.date = maxdate in (select t2.fund_code as code, max(t2.date) as maxdate from t2 group by fund_code)
+
+--select t1.* from holding_stock t1, latest_holding_stock t2
+--where t1.fund_code = t2.fund_code and t1.date = t2.date;
+
+select * from holding_stock where date = "2020-12-31" and  fund_code in ("260108", "007047") order by fund_code, stock_name]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">

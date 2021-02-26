@@ -2,24 +2,31 @@ package model
 
 import (
 	"database/sql"
+	"fmt"
 	"fund/config"
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
+	"github.com/jmoiron/sqlx"
 	"github.com/lauthrul/goutil/log"
 	_ "github.com/mattn/go-sqlite3"
+	"strings"
+	"time"
 )
 
 const (
-	tbBasic             = "basic"
-	tbHoldingStock      = "holding_stock"
-	tbManager           = "manager"
-	tbManagerExperience = "manager_experience"
-	tbNetValue          = "net_value"
+	DATEFORMAT = "2006-01-02"
+
+	tbBasic                = "basic"
+	tbHoldingStock         = "holding_stock"
+	tbManager              = "manager"
+	tbManagerExperience    = "manager_experience"
+	tbNetValue             = "net_value"
+	viewLatestHoldingStock = "latest_holding_stock"
 )
 
 var (
-	dialect = goqu.Dialect("sqlite")
-	db      *sql.DB
+	dialect = goqu.Dialect("sqlite3")
+	db      *sqlx.DB
 )
 
 // 基本信息
@@ -101,10 +108,10 @@ type FundEstimate struct {
 	EstimateDate string `json:"gztime"`   // 估值日期 	2018-09-25 15:00
 }
 
-func GetDB() *sql.DB {
+func GetDB() *sqlx.DB {
 	if db == nil {
 		var err error
-		db, err = sql.Open("sqlite3", config.Conf.DbFile)
+		db, err = sqlx.Open("sqlite3", config.Conf.DbFile)
 		if err != nil {
 			panic(err)
 		}
@@ -218,4 +225,51 @@ func SaveFundStockHoldings(tx *sql.Tx, holdings ...FundHoldingStock) error {
 		}
 	}
 	return nil
+}
+
+func GetNextFundNetValueDate(fundCode string) (string, error) {
+	stat, _, err := dialect.Select(goqu.MAX("date")).From(tbNetValue).Where(goqu.Ex{"code": fundCode}).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return "", err
+	}
+	var date string
+	err = GetDB().Get(&date, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return "", err
+	}
+	t, err := time.Parse(DATEFORMAT, date)
+	if err != nil {
+		log.ErrorF("%q: %s", err, date)
+		return "", err
+	}
+	t = t.AddDate(0, 0, 1)
+	date = t.Format(DATEFORMAT)
+	return date, err
+}
+
+func GetLatestHoldingStock(fundCode ...string) ([][]FundHoldingStock, error) {
+	s := ""
+	for _, f := range fundCode {
+		s += fmt.Sprintf(`"%s",`, f)
+	}
+	s = strings.TrimRight(s, ",")
+	stat := fmt.Sprintf(`select t1.* from %s t1, %s t2 
+where t1.fund_code = t2.fund_code and t1.date = t2.date and t1.fund_code in (%s)`, tbHoldingStock, viewLatestHoldingStock, s)
+	var items []FundHoldingStock
+	err := GetDB().Select(&items, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return nil, err
+	}
+	data := map[string][]FundHoldingStock{}
+	for _, item := range items {
+		data[item.FundCode] = append(data[item.FundCode], item)
+	}
+	var result [][]FundHoldingStock
+	for _, v := range data {
+		result = append(result, v)
+	}
+	return result, nil
 }

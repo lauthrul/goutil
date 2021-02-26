@@ -9,6 +9,7 @@ func Execute() {
 	rootCmd := RootCmd()
 	rootCmd.AddCommand(
 		InitCmd(),
+		AnalysisCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

@@ -7,6 +7,7 @@ import (
 	"github.com/antchfx/htmlquery"
 	"github.com/lauthrul/goutil/log"
 	"github.com/lauthrul/goutil/util"
+	"golang.org/x/net/html"
 	"regexp"
 	"sort"
 	"strconv"
@@ -308,11 +309,11 @@ func (api *EastMoneyApi) GetFundManager(fundCode string) ([]Manager, []ManagerEx
 		return nil, nil, err
 	}
 	fnDays := func(d1, d2 string) int {
-		t1, err := time.Parse("2006-01-02", d1)
+		t1, err := time.Parse(DATEFORMAT, d1)
 		if err != nil {
 			return 0
 		}
-		t2, err := time.Parse("2006-01-02", d2)
+		t2, err := time.Parse(DATEFORMAT, d2)
 		if err != nil {
 			t2 = time.Now()
 		}
@@ -357,7 +358,7 @@ func (api *EastMoneyApi) GetFundManager(fundCode string) ([]Manager, []ManagerEx
 		return merges
 	}
 	for _, m := range result.Datas {
-		startWorkDate := time.Now().Format("2006-01-02")
+		startWorkDate := time.Now().Format(DATEFORMAT)
 		days := 0
 		maxGrowth := float64(-100)
 		minGrowth := float64(100)
@@ -389,7 +390,7 @@ func (api *EastMoneyApi) GetFundManager(fundCode string) ([]Manager, []ManagerEx
 			}
 			r := Range{l.FromDate, l.ToDate}
 			if r.End == "" {
-				r.End = time.Now().Format("2006-01-02")
+				r.End = time.Now().Format(DATEFORMAT)
 			}
 			ranges = append(ranges, r)
 		}
@@ -424,13 +425,13 @@ func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundH
 	body := string(resp.Body())
 	reg := regexp.MustCompile(`"(.*)",arryear:(\[.*\]),curyear:(\d+)`)
 	results := reg.FindAllStringSubmatch(body, -1)
-	html := ""
+	htmls := ""
 	var years []int
 	curYear := year
 	if len(results) == 1 {
 		matches := results[0]
 		if len(matches) == 4 {
-			html = matches[1]
+			htmls = matches[1]
 			util.Json.UnmarshalFromString(matches[2], &years)
 			curYear, _ = strconv.Atoi(matches[3])
 		}
@@ -438,7 +439,7 @@ func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundH
 	_ = years
 	_ = curYear
 
-	doc, err := htmlquery.Parse(strings.NewReader(html))
+	doc, err := htmlquery.Parse(strings.NewReader(htmls))
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -450,27 +451,35 @@ func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundH
 		}
 	}()
 
+	fnGetNodeValue := func(top *html.Node, expr string, index int) string {
+		nodes := htmlquery.Find(top, expr)
+		if index >= 0 && index < len(nodes) {
+			return nodes[index].Data
+		}
+		return ""
+	}
+
 	var data []FundHoldingStock
 	nodes := htmlquery.Find(doc, "//div[@class='boxitem w790']")
 	for _, node := range nodes {
-		name := htmlquery.Find(node, ".//label[@class='left']/a/text()")[0]
-		label := []rune(strings.TrimSpace(htmlquery.Find(node, ".//label[@class='left']/text()")[0].Data))[0:8]
-		date := htmlquery.Find(node, ".//label[@class='right lab2 xq505']/font/text()")[0]
+		name := fnGetNodeValue(node, ".//label[@class='left']/a/text()", 0)
+		label := string([]rune(strings.TrimSpace(fnGetNodeValue(node, ".//label[@class='left']/text()", 0)))[0:8])
+		date := fnGetNodeValue(node, ".//label[@class='right lab2 xq505']/font/text()", 0)
 		trs := htmlquery.Find(node, ".//table[contains(@class,'w782 comm tzxq')]/tbody/tr")
 		for _, tr := range trs {
 			item := FundHoldingStock{
 				FundCode:  fundCode,
-				FundName:  strings.TrimSpace(name.Data),
-				Season:    strings.TrimSpace(string(label)),
-				Date:      strings.TrimSpace(date.Data),
-				StockCode: strings.TrimSpace(htmlquery.Find(tr, "./td[2]/a/text()")[0].Data), // 股票代码
-				StockName: strings.TrimSpace(htmlquery.Find(tr, "./td[3]/a/text()")[0].Data), // 股票名称
+				FundName:  strings.TrimSpace(name),
+				Season:    strings.TrimSpace(label),
+				Date:      strings.TrimSpace(date),
+				StockCode: strings.TrimSpace(fnGetNodeValue(tr, "./td[2]/a/text()", 0)), // 股票代码
+				StockName: strings.TrimSpace(fnGetNodeValue(tr, "./td[3]/a/text()", 0)), // 股票名称
 			}
-			s := strings.TrimSpace(htmlquery.Find(tr, "./td[last()-2]/text()")[0].Data) // 持仓占净值比例
+			s := strings.TrimSpace(fnGetNodeValue(tr, "./td[last()-2]/text()", 0)) // 持仓占净值比例
 			item.StockPercent, _ = strconv.ParseFloat(strings.TrimRight(s, "%"), 64)
-			s = strings.TrimSpace(htmlquery.Find(tr, "./td[last()-1]/text()")[0].Data) // 持仓股数，万股
+			s = strings.TrimSpace(fnGetNodeValue(tr, "./td[last()-1]/text()", 0)) // 持仓股数，万股
 			item.StockAmount, _ = strconv.ParseFloat(strings.ReplaceAll(s, ",", ""), 64)
-			s = strings.TrimSpace(htmlquery.Find(tr, "./td[last()]/text()")[0].Data) // 持仓市值，万元
+			s = strings.TrimSpace(fnGetNodeValue(tr, "./td[last()]/text()", 0)) // 持仓市值，万元
 			item.StockValue, _ = strconv.ParseFloat(strings.ReplaceAll(s, ",", ""), 64)
 			data = append(data, item)
 		}
