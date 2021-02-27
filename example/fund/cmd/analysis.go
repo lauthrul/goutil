@@ -7,7 +7,6 @@ import (
 	"github.com/lauthrul/goutil/log"
 	"github.com/spf13/cobra"
 	"sort"
-	"strings"
 )
 
 type Similarity struct {
@@ -29,24 +28,22 @@ type MostHolding struct {
 func AnalysisCmd() *cobra.Command {
 	var (
 		configFile string
-		funds      string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "analysis",
-		Short: "analysis funds",
-		Long:  "analysis funds with similarity by specified fund codes, split by `,`",
+		Short: "Analysis funds",
+		Long:  "Analysis funds with similarity, most holding stocks or some other aspects.",
 		Run: func(cmd *cobra.Command, args []string) {
 			conf := config.Load(configFile)
 			Init(conf)
-			codes := strings.Split(funds, ",")
-			if len(codes) == 0 {
+			if len(args) == 0 {
 				return
 			}
 
-			log.DebugF("analysis funds:%s", funds)
+			log.DebugF("analysis funds:%s", args)
 
-			holdings, err := model.GetLatestHoldingStock(codes...)
+			holdings, err := model.GetLatestHoldingStock(args...)
 			if err != nil {
 				log.Error(err)
 				return
@@ -140,7 +137,6 @@ func AnalysisCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
-	cmd.Flags().StringVarP(&funds, "funds", "f", "", "fund codes, split by `,`")
 
 	return cmd
 }

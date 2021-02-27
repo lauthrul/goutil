@@ -12,18 +12,20 @@ import (
 func InitCmd() *cobra.Command {
 	var (
 		configFile string
-		funds      string
 		typ        string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "init funds info",
-		Long:  "init funds info([basic,manager,net_value,holding,stock]) by specified fund codes, split by `,`",
+		Short: "Init fund info",
+		Long:  "Init fund info([basic,manager,net_value,holding,stock])",
 		Run: func(cmd *cobra.Command, args []string) {
 			types := strings.Split(typ, ",")
-			if len(types) == 0 || funds == "" {
-				cmd.Usage()
+			if typ == "" || len(types) == 0 {
+				_ = cmd.Usage()
+				return
+			}
+			if len(args) == 0 {
 				return
 			}
 
@@ -38,16 +40,12 @@ func InitCmd() *cobra.Command {
 
 			conf := config.Load(configFile)
 			Init(conf)
-			codes := strings.Split(funds, ",")
-			if len(codes) == 0 {
-				return
-			}
 
-			log.DebugF("fund init type:%s, funds:%s", typ, funds)
+			log.DebugF("fund init type:%s, funds:%s", typ, args)
 
 			api := model.NewEastMoneyApi()
 
-			for _, code := range codes {
+			for _, code := range args {
 				if code == "" {
 					continue
 				}
@@ -154,8 +152,7 @@ func InitCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
-	cmd.Flags().StringVarP(&funds, "funds", "f", "", "fund codes, split by `,`")
-	cmd.Flags().StringVarP(&typ, "type", "t", "", "init type, can be one or all of [basic,manager,net_value,holdings,all]")
+	cmd.Flags().StringVarP(&typ, "type", "t", "", `init type, can be one or all of [basic,manager,net_value,holdings,all], split by ","`)
 
 	return cmd
 }

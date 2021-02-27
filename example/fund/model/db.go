@@ -16,7 +16,9 @@ import (
 const (
 	DATEFORMAT = "2006-01-02"
 
-	tbBasic                = "basic"
+	tbFund                 = "fund"
+	tbGroup                = "group"
+	tbFundGroup            = "fund_group"
 	tbHoldingStock         = "holding_stock"
 	tbManager              = "manager"
 	tbManagerExperience    = "manager_experience"
@@ -48,6 +50,17 @@ type FundBasic struct {
 	SortId      int     `db:"sort_id"`      // 排序id
 	Remark      string  `db:"remark"`       // 备注
 	Tags        string  `db:"tags"`         // 标签
+}
+
+// 分组名
+type Group struct {
+	Name string `db:"name"`
+}
+
+// 基金分组
+type FundGroup struct {
+	FundCode string `db:"fund_code"`
+	Group    string `db:"group"`
 }
 
 // 基金经理
@@ -121,7 +134,7 @@ func GetDB() *sqlx.DB {
 
 func SaveFundBasic(tx *sql.Tx, funds ...FundBasic) error {
 	for _, v := range funds {
-		stat, _, err := dialect.Insert(tbBasic).Rows(v).
+		stat, _, err := dialect.Insert(tbFund).Rows(v).
 			OnConflict(goqu.DoUpdate("code", goqu.Record{
 				"latest_scale": v.LatestScale,
 				"update_date":  v.UpdateDate,
@@ -272,4 +285,95 @@ where t1.fund_code = t2.fund_code and t1.date = t2.date and t1.fund_code in (%s)
 		result = append(result, v)
 	}
 	return result, nil
+}
+
+func SetFundFav(flag bool, fundCode ...string) error {
+	stat, _, err := dialect.Update(tbFund).Set(goqu.Record{"is_fav": flag}).Where(goqu.Ex{"code": fundCode}).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return err
+	}
+	_, err = GetDB().Exec(stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return err
+}
+
+func AddGroup(group ...string) error {
+	var groups []Group
+	for _, g := range group {
+		groups = append(groups, Group{
+			Name: g,
+		})
+	}
+	stat, _, err := dialect.Insert(tbGroup).Rows(groups).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return err
+	}
+	_, err = GetDB().Exec(stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return err
+}
+
+func RemoveGroup(group ...string) error {
+	stat, _, err := dialect.Delete(tbGroup).Where(goqu.Ex{"name": group}).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return err
+	}
+	_, err = GetDB().Exec(stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return err
+}
+
+func AddFundGroup(group string, fundCode ...string) error {
+	var records []FundGroup
+	for _, f := range fundCode {
+		records = append(records, FundGroup{
+			FundCode: f,
+			Group:    group,
+		})
+	}
+	stat, _, err := dialect.Insert(tbFundGroup).Rows(records).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return err
+	}
+	_, err = GetDB().Exec(stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return err
+}
+
+func RemoveFundGroup(group string, fundCode ...string) error {
+	stat, _, err := dialect.Delete(tbFundGroup).Where(goqu.Ex{"group": group, "fund_code": fundCode}).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return err
+	}
+	_, err = GetDB().Exec(stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return err
+}
+
+func SetFundRemark(remark string, fundCode ...string) error {
+	stat, _, err := dialect.Update(tbFund).Set(goqu.Record{"remark": remark}).Where(goqu.Ex{"code": fundCode}).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return err
+	}
+	_, err = GetDB().Exec(stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return err
 }

@@ -9,6 +9,8 @@ func Execute() {
 	rootCmd := RootCmd()
 	rootCmd.AddCommand(
 		InitCmd(),
+		FundCmd(),
+		GroupCmd(),
 		AnalysisCmd(),
 	)
 
