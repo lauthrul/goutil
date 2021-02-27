@@ -13,8 +13,6 @@ func FundCmd() *cobra.Command {
 		configFile  string
 		addFav      bool
 		removeFav   bool
-		addGroup    string
-		removeGroup string
 		setRemark   string
 		list        bool
 		withFav     bool
@@ -30,7 +28,7 @@ func FundCmd() *cobra.Command {
 			conf := config.Load(configFile)
 			Init(conf)
 			isSetRemark := cmd.Flags().Changed("set-remark")
-			if !addFav && !removeFav && addGroup == "" && removeGroup == "" && !isSetRemark && !list {
+			if !addFav && !removeFav && !isSetRemark && !list {
 				_ = cmd.Usage()
 				return
 			}
@@ -39,12 +37,6 @@ func FundCmd() *cobra.Command {
 			}
 			if removeFav {
 				_ = model.SetFundFav(false, args...)
-			}
-			if addGroup != "" {
-				_ = model.AddFundGroup(addGroup, args...)
-			}
-			if removeGroup != "" {
-				_ = model.RemoveFundGroup(removeGroup, args...)
 			}
 			if isSetRemark {
 				_ = model.SetFundRemark(setRemark, args...)
@@ -73,8 +65,6 @@ func FundCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
 	cmd.Flags().BoolVarP(&addFav, "add-fav", "f", false, "add fund(s) to favorites")
 	cmd.Flags().BoolVarP(&removeFav, "remove-fav", "F", false, "remove fund(s) from favorites")
-	cmd.Flags().StringVarP(&addGroup, "add-group", "g", "", "add fund(s) to group")
-	cmd.Flags().StringVarP(&removeGroup, "remove-group", "G", "", "remove fund(s) from group")
 	cmd.Flags().StringVarP(&setRemark, "set-remark", "m", "", "set fund(s) remark")
 	cmd.Flags().BoolVarP(&list, "list", "l", false, "list all funds")
 	cmd.Flags().BoolVarP(&withFav, "with-fav", "", false, `list funds with fav, use together with "-l,--list"`)

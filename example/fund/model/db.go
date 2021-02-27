@@ -105,6 +105,7 @@ type Group struct {
 // 基金分组
 type FundGroup struct {
 	FundCode string `db:"fund_code"`
+	FundName string `db:"-"`
 	Group    string `db:"group"`
 }
 
@@ -397,27 +398,83 @@ func ListGroup() ([]string, error) {
 	return list, err
 }
 
-func AddFundGroup(group string, fundCode ...string) error {
-	var records []FundGroup
-	for _, f := range fundCode {
-		records = append(records, FundGroup{
-			FundCode: f,
-			Group:    group,
-		})
+func ListGroupFund(group ...string) ([]FundGroup, error) {
+	var list []FundGroup
+	ex := goqu.Ex{}
+	if len(group) > 0 {
+		ex["group"] = group
 	}
-	stat, _, err := dialect.Insert(tbFundGroup).Rows(records).ToSQL()
+	stat, _, err := dialect.From(tbFundGroup).Where(ex).ToSQL()
 	if err != nil {
 		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Select(&list, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	var codes []string
+	for _, l := range list {
+		codes = append(codes, l.FundCode)
+	}
+	var names []struct {
+		Code string `db:"code"`
+		Name string `db:"name"`
+	}
+	stat, _, err = dialect.Select("code", "name").From(tbFund).Where(goqu.Ex{"code": codes}).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Select(&names, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	for i, _ := range list {
+		l := &list[i]
+		for _, n := range names {
+			if l.FundCode == n.Code {
+				l.FundName = n.Name
+				break
+			}
+		}
+	}
+	return list, err
+}
+
+func AddGroupFund(fundCode []string, group ...string) error {
+	tx, err := GetDB().Begin()
+	if err != nil {
+		log.Debug(err)
 		return err
 	}
-	_, err = GetDB().Exec(stat)
+	for _, g := range group {
+		var records []FundGroup
+		for _, f := range fundCode {
+			records = append(records, FundGroup{
+				FundCode: f,
+				Group:    g,
+			})
+		}
+		stat, _, err := dialect.Insert(tbFundGroup).Rows(records).ToSQL()
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+		_, err = tx.Exec(stat)
+		if err != nil {
+			log.ErrorF("%q: %s", err, stat)
+			return err
+		}
+	}
+	err = tx.Commit()
 	if err != nil {
-		log.ErrorF("%q: %s", err, stat)
+		log.ErrorF("commit fail: %s", err.Error())
 	}
 	return err
 }
 
-func RemoveFundGroup(group string, fundCode ...string) error {
+func RemoveGroupFund(fundCode []string, group ...string) error {
 	stat, _, err := dialect.Delete(tbFundGroup).Where(goqu.Ex{"group": group, "fund_code": fundCode}).ToSQL()
 	if err != nil {
 		log.ErrorF("%q: %s", err, stat)

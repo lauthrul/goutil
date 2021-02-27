@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"fund/config"
 	"fund/model"
 	"github.com/lauthrul/goutil/log"
@@ -13,6 +14,7 @@ func InitCmd() *cobra.Command {
 	var (
 		configFile string
 		typ        string
+		withFav    bool
 	)
 
 	cmd := &cobra.Command{
@@ -20,12 +22,29 @@ func InitCmd() *cobra.Command {
 		Short: "Init fund info",
 		Long:  "Init fund info([basic,manager,net_value,holding,stock])",
 		Run: func(cmd *cobra.Command, args []string) {
+			conf := config.Load(configFile)
+			Init(conf)
+
 			types := strings.Split(typ, ",")
 			if typ == "" || len(types) == 0 {
 				_ = cmd.Usage()
 				return
 			}
-			if len(args) == 0 {
+
+			codes := args
+			if withFav {
+				funds, err := model.ListFund(model.ListFundArg{
+					IsFav: true,
+				})
+				if err != nil {
+					return
+				}
+				for _, f := range funds {
+					codes = append(codes, f.Code)
+				}
+			}
+			if len(codes) == 0 {
+				fmt.Println(`no funds to init. you can specific fund codes, or use flag "-f,--with-Fav" to init favorite funds`)
 				return
 			}
 
@@ -38,14 +57,11 @@ func InitCmd() *cobra.Command {
 				return false
 			}
 
-			conf := config.Load(configFile)
-			Init(conf)
-
-			log.DebugF("fund init type:%s, funds:%s", typ, args)
+			log.DebugF("fund init type:%s, funds:%s", typ, codes)
 
 			api := model.NewEastMoneyApi()
 
-			for _, code := range args {
+			for _, code := range codes {
 				if code == "" {
 					continue
 				}
@@ -153,6 +169,7 @@ func InitCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
 	cmd.Flags().StringVarP(&typ, "type", "t", "", `init type, can be one or all of [basic,manager,net_value,holdings,all], split by ","`)
+	cmd.Flags().BoolVarP(&withFav, "with-fav", "f", false, `analysis funds with fav`)
 
 	return cmd
 }
