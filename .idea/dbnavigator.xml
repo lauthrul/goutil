@@ -26,7 +26,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="524130cd-c14c-41a4-8ad1-7034898652dd">
-        <schema name="main" object-types="view, column, table" />
+        <schema name="main" object-types="column, table, view" />
       </connection>
     </loaded-nodes>
   </component>
@@ -42,7 +42,9 @@
 --select t1.* from holding_stock t1, latest_holding_stock t2
 --where t1.fund_code = t2.fund_code and t1.date = t2.date;
 
-select * from holding_stock where date = "2020-12-31" and  fund_code in ("260108", "007047") order by fund_code, stock_name]]></console>
+--select * from holding_stock where date = "2020-12-31" and  fund_code in ("260108", "007047") order by fund_code, stock_name
+
+select  * from `group`]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">

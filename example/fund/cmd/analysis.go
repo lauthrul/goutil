@@ -28,6 +28,7 @@ type MostHolding struct {
 func AnalysisCmd() *cobra.Command {
 	var (
 		configFile string
+		withFav    bool
 	)
 
 	cmd := &cobra.Command{
@@ -37,13 +38,27 @@ func AnalysisCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			conf := config.Load(configFile)
 			Init(conf)
-			if len(args) == 0 {
+
+			codes := args
+			if withFav {
+				funds, err := model.ListFund(model.ListFundArg{
+					IsFav: true,
+				})
+				if err != nil {
+					return
+				}
+				for _, f := range funds {
+					codes = append(codes, f.Code)
+				}
+			}
+			if len(codes) == 0 {
+				fmt.Println(`no funds to analysis. you can specific fund codes, or use flag "-f,--with-Fav" to analysis favorite funds`)
 				return
 			}
 
-			log.DebugF("analysis funds:%s", args)
+			log.DebugF("analysis funds:%s", codes)
 
-			holdings, err := model.GetLatestHoldingStock(args...)
+			holdings, err := model.GetLatestHoldingStock(codes...)
 			if err != nil {
 				log.Error(err)
 				return
@@ -137,6 +152,7 @@ func AnalysisCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
+	cmd.Flags().BoolVarP(&withFav, "with-fav", "f", false, `analysis funds with fav`)
 
 	return cmd
 }

@@ -3,7 +3,9 @@ package cmd
 import (
 	"fund/config"
 	"fund/model"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func FundCmd() *cobra.Command {
@@ -14,6 +16,10 @@ func FundCmd() *cobra.Command {
 		addGroup    string
 		removeGroup string
 		setRemark   string
+		list        bool
+		withFav     bool
+		code        *[]string
+		name        string
 	)
 
 	cmd := &cobra.Command{
@@ -24,7 +30,7 @@ func FundCmd() *cobra.Command {
 			conf := config.Load(configFile)
 			Init(conf)
 			isSetRemark := cmd.Flags().Changed("set-remark")
-			if !addFav && !removeFav && addGroup == "" && removeGroup == "" && !isSetRemark {
+			if !addFav && !removeFav && addGroup == "" && removeGroup == "" && !isSetRemark && !list {
 				_ = cmd.Usage()
 				return
 			}
@@ -43,6 +49,24 @@ func FundCmd() *cobra.Command {
 			if isSetRemark {
 				_ = model.SetFundRemark(setRemark, args...)
 			}
+			if list {
+				data, err := model.ListFund(model.ListFundArg{
+					IsFav: withFav,
+					Code:  *code,
+					Name:  name,
+				})
+				if err != nil {
+					return
+				}
+
+				table := tablewriter.NewWriter(os.Stdout)
+				table.SetHeader(model.FundBasic{}.Titles())
+				table.SetAlignment(tablewriter.ALIGN_RIGHT)
+				for _, v := range data {
+					table.Append(v.Values())
+				}
+				table.Render()
+			}
 		},
 	}
 
@@ -52,6 +76,10 @@ func FundCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&addGroup, "add-group", "g", "", "add fund(s) to group")
 	cmd.Flags().StringVarP(&removeGroup, "remove-group", "G", "", "remove fund(s) from group")
 	cmd.Flags().StringVarP(&setRemark, "set-remark", "m", "", "set fund(s) remark")
+	cmd.Flags().BoolVarP(&list, "list", "l", false, "list all funds")
+	cmd.Flags().BoolVarP(&withFav, "with-fav", "", false, `list funds with fav, use together with "-l,--list"`)
+	code = cmd.Flags().StringSliceP("code", "", nil, `list fund with code, use together with "-l,--list"`)
+	cmd.Flags().StringVarP(&name, "name", "", "", `list fund with name(fuzzy search), use together with "-l,--list"`)
 
 	return cmd
 }

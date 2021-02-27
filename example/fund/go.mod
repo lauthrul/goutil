@@ -10,6 +10,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lauthrul/goutil v0.0.0
 	github.com/mattn/go-sqlite3 v1.14.6
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/rivo/tview v0.0.0-20210125085121-dbc1f32bb1d0
 	github.com/shopspring/decimal v1.2.0
 	github.com/spf13/cobra v1.1.3

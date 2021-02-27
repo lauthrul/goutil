@@ -6,6 +6,7 @@ import (
 	"fund/config"
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/jmoiron/sqlx"
 	"github.com/lauthrul/goutil/log"
 	_ "github.com/mattn/go-sqlite3"
@@ -50,6 +51,50 @@ type FundBasic struct {
 	SortId      int     `db:"sort_id"`      // 排序id
 	Remark      string  `db:"remark"`       // 备注
 	Tags        string  `db:"tags"`         // 标签
+}
+
+func (f FundBasic) Titles() []string {
+	return []string{
+		"代码",
+		"简称",
+		"类型",
+		"成立日期",
+		"成立规模（元）",
+		"最新规模（元）",
+		"更新日期",
+		"基金公司代码",
+		"基金公司名称",
+		"基金经理ID",
+		"基金经理名称",
+		"管理费率（年）",
+		"托管费率（年）",
+		"是否收藏",
+		"排序id",
+		"备注",
+		"标签",
+	}
+}
+
+func (f FundBasic) Values() []string {
+	return []string{
+		f.Code,
+		f.Name,
+		f.Type,
+		f.CreateDate[0:10],
+		fmt.Sprintf("%.2f", f.CreateScale),
+		fmt.Sprintf("%.2f", f.LatestScale),
+		f.UpdateDate[0:10],
+		f.CompanyCode,
+		f.CompanyName,
+		f.ManagerID,
+		f.ManagerName,
+		fmt.Sprintf("%.2f%%", f.ManageExp),
+		fmt.Sprintf("%.2f%%", f.TrustExp),
+		fmt.Sprintf("%t", f.IsFav),
+		fmt.Sprintf("%d", f.SortId),
+		f.Remark,
+		f.Tags,
+	}
 }
 
 // 分组名
@@ -119,6 +164,12 @@ type FundEstimate struct {
 	EstimateNet  string `json:"gsz"`      // 估算净值 	1.2388
 	EstimateRate string `json:"gszzl"`    // 估算增长率	-0.42
 	EstimateDate string `json:"gztime"`   // 估值日期 	2018-09-25 15:00
+}
+
+type ListFundArg struct {
+	IsFav bool
+	Code  []string
+	Name  string
 }
 
 func GetDB() *sqlx.DB {
@@ -332,6 +383,20 @@ func RemoveGroup(group ...string) error {
 	return err
 }
 
+func ListGroup() ([]string, error) {
+	var list []string
+	stat, _, err := dialect.From(tbGroup).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Select(&list, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return list, err
+}
+
 func AddFundGroup(group string, fundCode ...string) error {
 	var records []FundGroup
 	for _, f := range fundCode {
@@ -376,4 +441,28 @@ func SetFundRemark(remark string, fundCode ...string) error {
 		log.ErrorF("%q: %s", err, stat)
 	}
 	return err
+}
+
+func ListFund(arg ListFundArg) ([]FundBasic, error) {
+	var exs []exp.Expression
+	if arg.IsFav {
+		exs = append(exs, goqu.Ex{"is_fav": arg.IsFav})
+	}
+	if len(arg.Code) > 0 {
+		exs = append(exs, goqu.Ex{"code": arg.Code})
+	}
+	if len(arg.Name) > 0 {
+		exs = append(exs, goqu.C("name").Like(fmt.Sprintf("%%%s%%", arg.Name)))
+	}
+	var list []FundBasic
+	stat, _, err := dialect.From(tbFund).Where(exs...).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Select(&list, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return list, err
 }
