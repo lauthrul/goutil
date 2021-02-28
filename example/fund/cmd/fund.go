@@ -10,14 +10,15 @@ import (
 
 func FundCmd() *cobra.Command {
 	var (
-		configFile  string
-		addFav      bool
-		removeFav   bool
-		setRemark   string
-		list        bool
-		withFav     bool
-		code        *[]string
-		name        string
+		configFile string
+		addFav     bool
+		removeFav  bool
+		setRemark  string
+		list       bool
+		withFav    bool
+		code       *[]string
+		name       string
+		manager    bool
 	)
 
 	cmd := &cobra.Command{
@@ -28,7 +29,7 @@ func FundCmd() *cobra.Command {
 			conf := config.Load(configFile)
 			Init(conf)
 			isSetRemark := cmd.Flags().Changed("set-remark")
-			if !addFav && !removeFav && !isSetRemark && !list {
+			if !addFav && !removeFav && !isSetRemark && !list && !manager {
 				_ = cmd.Usage()
 				return
 			}
@@ -59,6 +60,19 @@ func FundCmd() *cobra.Command {
 				}
 				table.Render()
 			}
+			if manager {
+				data, err := model.ListFundManager(args...)
+				if err != nil {
+					return
+				}
+				table := tablewriter.NewWriter(os.Stdout)
+				table.SetHeader(model.FundManager{}.Titles())
+				table.SetAlignment(tablewriter.ALIGN_RIGHT)
+				for _, v := range data {
+					table.Append(v.Values())
+				}
+				table.Render()
+			}
 		},
 	}
 
@@ -70,6 +84,7 @@ func FundCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&withFav, "with-fav", "", false, `list funds with fav, use together with "-l,--list"`)
 	code = cmd.Flags().StringSliceP("code", "", nil, `list fund with code, use together with "-l,--list"`)
 	cmd.Flags().StringVarP(&name, "name", "", "", `list fund with name(fuzzy search), use together with "-l,--list"`)
+	cmd.Flags().BoolVarP(&manager, "manager", "M", false, `show fund manager info`)
 
 	return cmd
 }

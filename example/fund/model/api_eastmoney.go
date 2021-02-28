@@ -328,7 +328,7 @@ func (api *EastMoneyApi) GetFundManager(fundCode string) ([]Manager, []ManagerEx
 			return ranges[i].Start < ranges[j].Start
 		})
 		fnOverlap := func(r1, r2 Range) bool {
-			return (r2.Start < r1.Start && r1.Start < r2.End) || (r1.Start < r2.Start && r2.Start < r1.End)
+			return (r2.Start <= r1.Start && r1.Start <= r2.End) || (r1.Start <= r2.Start && r2.Start <= r1.End)
 		}
 		fnMerge := func(r1, r2 Range) Range {
 			s := r1.Start

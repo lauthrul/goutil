@@ -59,7 +59,7 @@ func GroupCmd() *cobra.Command {
 				for g, funds := range groups {
 					fmt.Printf("Funds in group: %s (%d)\n", g, len(funds))
 					for _, f := range funds {
-						fmt.Printf("\t%s(%s)\n", f.FundName, f.FundCode)
+						fmt.Printf("\t%s %s\n", f.FundCode, f.FundName)
 					}
 				}
 			}

@@ -24,7 +24,9 @@ const (
 	tbManager              = "manager"
 	tbManagerExperience    = "manager_experience"
 	tbNetValue             = "net_value"
-	viewLatestHoldingStock = "latest_holding_stock"
+	viewLatestHoldingStock = "view_latest_holding_stock"
+	viewGroupFund          = "view_group_fund"
+	viewFundManager        = "view_fund_manager"
 )
 
 var (
@@ -105,7 +107,7 @@ type Group struct {
 // 基金分组
 type FundGroup struct {
 	FundCode string `db:"fund_code"`
-	FundName string `db:"-"`
+	FundName string `db:"fund_name"`
 	Group    string `db:"group"`
 }
 
@@ -132,6 +134,62 @@ type ManagerExperience struct {
 	FundCode    string  `db:"fund_code"`
 	FundName    string  `db:"fund_name"`
 	Growth      float64 `db:"growth"`
+}
+
+// 基金经理视图
+type FundManager struct {
+	FundCode      string  `db:"fund_code"`
+	FundName      string  `db:"fund_name"`
+	ManagerID     string  `db:"manager_id"`
+	ManagerName   string  `db:"manager_name"`
+	FromDate      string  `db:"from_date"`
+	Growth        float64 `db:"growth"`
+	StartWorkDate string  `db:"start_work_date"`
+	WorkDays      int     `db:"work_days"`
+	MaxGrowth     float64 `db:"max_growth"`
+	MinGrowth     float64 `db:"min_growth"`
+	AveGrowth     float64 `db:"ave_growth"`
+	HoldingFunds  int     `db:"holding_funds"`
+	Education     string  `db:"education"`
+	Resume        string  `db:"resume"`
+}
+
+func (f FundManager) Titles() []string {
+	return []string{
+		"基金代码",
+		"基金名称",
+		"基金经理代码",
+		"基金经理",
+		"任职日期",
+		"增长率",
+		"从业日期",
+		"工作年限",
+		"最高增长率",
+		"最低增长率",
+		"平均增长率",
+		"当前管理基金数",
+		"教育水平",
+		"简历",
+	}
+}
+
+func (f FundManager) Values() []string {
+	return []string{
+		f.FundCode,
+		f.FundName,
+		f.ManagerID,
+		f.ManagerName,
+		f.FromDate[0:10],
+		fmt.Sprintf("%0.2f%%", f.Growth),
+		f.StartWorkDate[0:10],
+		fmt.Sprintf("%d年%d天", f.WorkDays/365, f.WorkDays%365),
+		fmt.Sprintf("%0.2f%%", f.MaxGrowth),
+		fmt.Sprintf("%0.2f%%", f.MinGrowth),
+		fmt.Sprintf("%0.2f%%", f.AveGrowth),
+		fmt.Sprintf("%d", f.HoldingFunds),
+		f.Education,
+		f.Resume,
+	}
 }
 
 // 基金持仓
@@ -404,7 +462,7 @@ func ListGroupFund(group ...string) ([]FundGroup, error) {
 	if len(group) > 0 {
 		ex["group"] = group
 	}
-	stat, _, err := dialect.From(tbFundGroup).Where(ex).ToSQL()
+	stat, _, err := dialect.From(viewGroupFund).Where(ex).ToSQL()
 	if err != nil {
 		log.ErrorF("%q: %s", err, stat)
 		return list, err
@@ -412,32 +470,6 @@ func ListGroupFund(group ...string) ([]FundGroup, error) {
 	err = GetDB().Select(&list, stat)
 	if err != nil {
 		log.ErrorF("%q: %s", err, stat)
-	}
-	var codes []string
-	for _, l := range list {
-		codes = append(codes, l.FundCode)
-	}
-	var names []struct {
-		Code string `db:"code"`
-		Name string `db:"name"`
-	}
-	stat, _, err = dialect.Select("code", "name").From(tbFund).Where(goqu.Ex{"code": codes}).ToSQL()
-	if err != nil {
-		log.ErrorF("%q: %s", err, stat)
-		return list, err
-	}
-	err = GetDB().Select(&names, stat)
-	if err != nil {
-		log.ErrorF("%q: %s", err, stat)
-	}
-	for i, _ := range list {
-		l := &list[i]
-		for _, n := range names {
-			if l.FundCode == n.Code {
-				l.FundName = n.Name
-				break
-			}
-		}
 	}
 	return list, err
 }
@@ -513,6 +545,20 @@ func ListFund(arg ListFundArg) ([]FundBasic, error) {
 	}
 	var list []FundBasic
 	stat, _, err := dialect.From(tbFund).Where(exs...).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Select(&list, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return list, err
+}
+
+func ListFundManager(fundCode ...string) ([]FundManager, error) {
+	var list []FundManager
+	stat, _, err := dialect.From(viewFundManager).Where(goqu.Ex{"fund_code": fundCode}).ToSQL()
 	if err != nil {
 		log.ErrorF("%q: %s", err, stat)
 		return list, err
