@@ -52,7 +52,7 @@ func GroupCmd() *cobra.Command {
 				if err != nil {
 					return
 				}
-				groups := map[string][]model.FundGroup{}
+				groups := map[string][]model.GroupFund{}
 				for _, d := range data {
 					groups[d.Group] = append(groups[d.Group], d)
 				}

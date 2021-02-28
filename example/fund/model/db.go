@@ -107,6 +107,12 @@ type Group struct {
 // 基金分组
 type FundGroup struct {
 	FundCode string `db:"fund_code"`
+	Group    string `db:"group"`
+}
+
+// 基金分组视图
+type GroupFund struct {
+	FundCode string `db:"fund_code"`
 	FundName string `db:"fund_name"`
 	Group    string `db:"group"`
 }
@@ -456,8 +462,8 @@ func ListGroup() ([]string, error) {
 	return list, err
 }
 
-func ListGroupFund(group ...string) ([]FundGroup, error) {
-	var list []FundGroup
+func ListGroupFund(group ...string) ([]GroupFund, error) {
+	var list []GroupFund
 	ex := goqu.Ex{}
 	if len(group) > 0 {
 		ex["group"] = group
