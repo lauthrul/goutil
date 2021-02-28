@@ -29,6 +29,7 @@ func AnalysisCmd() *cobra.Command {
 	var (
 		configFile string
 		withFav    bool
+		group      []string
 	)
 
 	cmd := &cobra.Command{
@@ -49,6 +50,15 @@ func AnalysisCmd() *cobra.Command {
 				}
 				for _, f := range funds {
 					codes = append(codes, f.Code)
+				}
+			}
+			if len(group) > 0 {
+				funds, err := model.ListGroupFund(group...)
+				if err != nil {
+					return
+				}
+				for _, f := range funds {
+					codes = append(codes, f.FundCode)
 				}
 			}
 			if len(codes) == 0 {
@@ -117,13 +127,13 @@ func AnalysisCmd() *cobra.Command {
 				return similarities[i].R1 > similarities[j].R1
 			})
 			for _, item := range similarities {
-				s := fmt.Sprintf("%s(%s),%s(%s): %.2f%%,%.2f%%\n\t%q\n\t%q",
+				s := fmt.Sprintf("%s(%s) <--%.2f%% : %.2f%%--> %s(%s): \n\t%q\n\t%q",
 					item.Name1,
 					item.Code1,
-					item.Name2,
-					item.Code2,
 					item.R1,
 					item.R2,
+					item.Name2,
+					item.Code2,
 					item.Stocks1,
 					item.Stocks2,
 				)
@@ -153,6 +163,7 @@ func AnalysisCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
 	cmd.Flags().BoolVarP(&withFav, "with-fav", "f", false, `analysis funds with fav`)
+	cmd.Flags().StringSliceVarP(&group, "group", "g", nil, `analysis funds in given group name(s)`)
 
 	return cmd
 }

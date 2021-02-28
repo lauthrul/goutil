@@ -16,7 +16,7 @@ func FundCmd() *cobra.Command {
 		setRemark  string
 		list       bool
 		withFav    bool
-		code       *[]string
+		code       []string
 		name       string
 		manager    bool
 	)
@@ -45,7 +45,7 @@ func FundCmd() *cobra.Command {
 			if list {
 				data, err := model.ListFund(model.ListFundArg{
 					IsFav: withFav,
-					Code:  *code,
+					Code:  code,
 					Name:  name,
 				})
 				if err != nil {
@@ -82,7 +82,7 @@ func FundCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&setRemark, "set-remark", "m", "", "set fund(s) remark")
 	cmd.Flags().BoolVarP(&list, "list", "l", false, "list all funds")
 	cmd.Flags().BoolVarP(&withFav, "with-fav", "", false, `list funds with fav, use together with "-l,--list"`)
-	code = cmd.Flags().StringSliceP("code", "", nil, `list fund with code, use together with "-l,--list"`)
+	cmd.Flags().StringSliceVarP(&code, "code", "", nil, `list fund with code, use together with "-l,--list"`)
 	cmd.Flags().StringVarP(&name, "name", "", "", `list fund with name(fuzzy search), use together with "-l,--list"`)
 	cmd.Flags().BoolVarP(&manager, "manager", "M", false, `show fund manager info`)
 
