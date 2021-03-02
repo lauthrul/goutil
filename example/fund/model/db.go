@@ -211,6 +211,34 @@ type FundHoldingStock struct {
 	StockValue   float64 `db:"stock_value"`   // 持仓市值，万元
 }
 
+func (f FundHoldingStock) Titles() []string {
+	return []string{
+		"基金代码",
+		"基金简称",
+		"季度",
+		"日期",
+		"股票代码",
+		"股票名称",
+		"持仓占比",
+		"持仓股数(万股)",
+		"持仓市值(万元)",
+	}
+}
+
+func (f FundHoldingStock) Values() []string {
+	return []string{
+		f.FundCode,
+		f.FundName,
+		f.Season,
+		f.Date,
+		f.StockCode,
+		f.StockName,
+		fmt.Sprintf("%g%%", f.StockPercent),
+		fmt.Sprintf("%g", f.StockAmount),
+		fmt.Sprintf("%g", f.StockValue),
+	}
+}
+
 // 基金净值
 type FundNetValue struct {
 	Code          string  `db:"code"`
@@ -222,13 +250,37 @@ type FundNetValue struct {
 
 // 基金估值
 type FundEstimate struct {
-	Code         string `json:"fundcode"` // 基金代码 	519983
-	Name         string `json:"name"`     // 基金简称 	长信量化先锋混合A
-	NetDate      string `json:"jzrq"`     // 日期 		2018-09-21
-	NetValue     string `json:"dwjz"`     // 单位净值 	1.2440
-	EstimateNet  string `json:"gsz"`      // 估算净值 	1.2388
-	EstimateRate string `json:"gszzl"`    // 估算增长率	-0.42
-	EstimateDate string `json:"gztime"`   // 估值日期 	2018-09-25 15:00
+	Code         string  `json:"fundcode"` // 基金代码 	519983
+	Name         string  `json:"name"`     // 基金简称 	长信量化先锋混合A
+	NetDate      string  `json:"jzrq"`     // 日期 		2018-09-21
+	NetValue     float64 `json:"dwjz"`     // 单位净值 	1.2440
+	EstimateNet  float64 `json:"gsz"`      // 估算净值 	1.2388
+	EstimateRate float64 `json:"gszzl"`    // 估算增长率	-0.42
+	EstimateDate string  `json:"gztime"`   // 估值日期 	2018-09-25 15:00
+}
+
+func (f FundEstimate) Titles() []string {
+	return []string{
+		"基金代码",
+		"基金简称",
+		"估值日期",
+		"估算净值",
+		"估算增长率",
+		"日期",
+		"单位净值",
+	}
+}
+
+func (f FundEstimate) Values() []string {
+	return []string{
+		f.Code,
+		f.Name,
+		f.EstimateDate,
+		fmt.Sprintf("%g", f.EstimateNet),
+		fmt.Sprintf("%g%%", f.EstimateRate),
+		f.NetDate,
+		fmt.Sprintf("%g", f.NetValue),
+	}
 }
 
 type ListFundArg struct {
@@ -565,6 +617,24 @@ func ListFund(arg ListFundArg) ([]FundBasic, error) {
 func ListFundManager(fundCode ...string) ([]FundManager, error) {
 	var list []FundManager
 	stat, _, err := dialect.From(viewFundManager).Where(goqu.Ex{"fund_code": fundCode}).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Select(&list, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+	}
+	return list, err
+}
+
+func ListFundHoldings(season string, fundCode ...string) ([]FundHoldingStock, error) {
+	var list []FundHoldingStock
+	ex := goqu.Ex{"fund_code": fundCode}
+	if season != "" {
+		ex["season"] = season
+	}
+	stat, _, err := dialect.From(tbHoldingStock).Where(ex).ToSQL()
 	if err != nil {
 		log.ErrorF("%q: %s", err, stat)
 		return list, err

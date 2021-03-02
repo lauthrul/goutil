@@ -135,6 +135,17 @@ type EastMoneyFundNetValueList struct {
 	PageIndex  int `json:"PageIndex"`
 }
 
+// 基金估值
+type EastMoneyFundEstimate struct {
+	Code         string `json:"fundcode"` // 基金代码 	519983
+	Name         string `json:"name"`     // 基金简称 	长信量化先锋混合A
+	NetDate      string `json:"jzrq"`     // 日期 		2018-09-21
+	NetValue     string `json:"dwjz"`     // 单位净值 	1.2440
+	EstimateNet  string `json:"gsz"`      // 估算净值 	1.2388
+	EstimateRate string `json:"gszzl"`    // 估算增长率	-0.42
+	EstimateDate string `json:"gztime"`   // 估值日期 	2018-09-25 15:00
+}
+
 type EastMoneyApi struct {
 	urlFundSearch   string
 	urlRank         string
@@ -152,7 +163,7 @@ func NewEastMoneyApi() *EastMoneyApi {
 		urlRank:         "http://fund.eastmoney.com/data/rankhandler.aspx",                                                                                                            // http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=rzdf&st=desc&sd=2020-02-18&ed=2021-02-18&qdii=&tabSubtype=,,,,,&pi=1&pn=10&dx=1&v=0.29261668485886694
 		urlBasic:        "http://fundmobapi.eastmoney.com/FundMApi/FundDetailInformation.ashx?callback=jQuery%d&FCODE=%s&deviceid=Wap&plat=Wap&product=EFund&version=2.0.0&Uid=&_=%d", // http://fundmobapi.eastmoney.com/FundMApi/FundDetailInformation.ashx?callback=jQuery3110907213304748691_1614149729392&FCODE=161725&deviceid=Wap&plat=Wap&product=EFund&version=2.0.0&Uid=&_=1614149729394
 		urlManager:      "http://fundmobapi.eastmoney.com/FundMApi/FundMangerDetail.ashx?callback=jQuery%d&FCODE=%s&deviceid=Wap&plat=Wap&product=EFund&version=2.0.0&Uid=&_=%d",      // http://fundmobapi.eastmoney.com/FundMApi/FundMangerDetail.ashx?callback=jQuery31108228140360881444_1614155764008&FCODE=004707&deviceid=Wap&plat=Wap&product=EFund&version=2.0.0&Uid=&_=1614155764009
-		urlEstimate:     "http://fundgz.1234567.com.cn/js/%s.js?rt=%d",                                                                                                                // http://fundgz.1234567.com.cn/js/007047.js?rt=1612108800
+		urlEstimate:     "http://fundgz.1234567.com.cn/js/%s.js?rt=%s",                                                                                                                // http://fundgz.1234567.com.cn/js/007047.js?rt=1612108800
 		urlHoldingStock: "http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=%s&topline=%d&year=%d&month=&rt=%s",                                                      // http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=007047&topline=10&year=2020&month=1&rt=0.6304561761132715
 		urlNetValue:     "http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery%d&fundCode=%s&pageIndex=%d&pageSize=%d&startDate=%s&endDate=%s&_=%d",                                 // http://api.fund.eastmoney.com/f10/lsjz?callback=jQuery18305743557371800165_1613632567355&fundCode=003494&pageIndex=1&pageSize=20&startDate=2021-02-17&endDate=2021-02-17&_=1613632577360
 		referer:         "http://fundf10.eastmoney.com/",
@@ -172,7 +183,7 @@ func (api *EastMoneyApi) GetFundRank(arg FundRankArg) (FundList, error) {
 	url := api.urlRank + "?" + arg.String()
 	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("%s: %s", err, url)
 		return funds, err
 	}
 
@@ -185,7 +196,7 @@ func (api *EastMoneyApi) GetFundRank(arg FundRankArg) (FundList, error) {
 			var items []string
 			err = util.Json.UnmarshalFromString(matches[1], &items)
 			if err != nil {
-				log.Error(err)
+				log.ErrorF("[url] %s: %s", url, err, matches[1])
 				return funds, err
 			}
 			for _, item := range items {
@@ -256,7 +267,7 @@ func (api *EastMoneyApi) GetFundBasic(fundCode string) (FundBasic, error) {
 	url := fmt.Sprintf(api.urlBasic, stamp, fundCode, stamp)
 	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("%s: %s", err, url)
 		return fundBasic, err
 	}
 
@@ -267,7 +278,7 @@ func (api *EastMoneyApi) GetFundBasic(fundCode string) (FundBasic, error) {
 	}
 	err = util.Json.UnmarshalFromString(data, &result)
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("[%s] %s: %s", url, err, data)
 		return fundBasic, err
 	}
 	fundBasic.Code = result.Datas.Code
@@ -294,7 +305,7 @@ func (api *EastMoneyApi) GetFundManager(fundCode string) ([]Manager, []ManagerEx
 	url := fmt.Sprintf(api.urlManager, stamp, fundCode, stamp)
 	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("%s: %s", err, url)
 		return nil, nil, err
 	}
 
@@ -305,7 +316,7 @@ func (api *EastMoneyApi) GetFundManager(fundCode string) ([]Manager, []ManagerEx
 	}
 	err = util.Json.UnmarshalFromString(data, &result)
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("[%s] %s: %s", url, err, data)
 		return nil, nil, err
 	}
 	fnDays := func(d1, d2 string) int {
@@ -418,7 +429,7 @@ func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundH
 	url := fmt.Sprintf(api.urlHoldingStock, fundCode, 20, year, api.GetRandom())
 	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("%s: %s", err, url)
 		return nil, err
 	}
 
@@ -441,7 +452,7 @@ func (api *EastMoneyApi) GetFundHoldingStock(fundCode string, year int) ([]FundH
 
 	doc, err := htmlquery.Parse(strings.NewReader(htmls))
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("[%s] %s: %s", url, err, htmls)
 		return nil, err
 	}
 
@@ -492,7 +503,7 @@ func (api *EastMoneyApi) GetFundNetValue(fundCode string, start, end string, pag
 	url := fmt.Sprintf(api.urlNetValue, stamp, fundCode, page, pageSize, start, end, stamp)
 	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("%s: %s", err, url)
 		return nil, 0, err
 	}
 
@@ -501,7 +512,7 @@ func (api *EastMoneyApi) GetFundNetValue(fundCode string, start, end string, pag
 	var result EastMoneyFundNetValueList
 	err = util.Json.UnmarshalFromString(data, &result)
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("[%s] %s: %s", url, err, data)
 		return nil, 0, err
 	}
 	var values []FundNetValue
@@ -528,17 +539,26 @@ func (api *EastMoneyApi) GetFundEstimate(fundCode string) (FundEstimate, error) 
 	url := fmt.Sprintf(api.urlEstimate, fundCode, api.GetRandom())
 	resp, err := common.Client.Get(url, map[string]string{"Referer": api.referer})
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("%s: %s", err, url)
 		return estimate, err
 	}
 
 	data := string(resp.Body())
 	data = data[strings.Index(data, "(")+1 : strings.LastIndex(data, ")")]
-	err = util.Json.UnmarshalFromString(data, &estimate)
+	var result EastMoneyFundEstimate
+	err = util.Json.UnmarshalFromString(data, &result)
 	if err != nil {
-		log.Error(err)
+		log.ErrorF("[%s] %s: %s", url, err, data)
 		return estimate, err
 	}
+
+	estimate.Code = result.Code
+	estimate.Name = result.Name
+	estimate.NetDate = result.NetDate
+	estimate.NetValue, _ = strconv.ParseFloat(result.NetValue, 64)
+	estimate.EstimateNet, _ = strconv.ParseFloat(result.EstimateNet, 64)
+	estimate.EstimateRate, _ = strconv.ParseFloat(result.EstimateRate, 64)
+	estimate.EstimateDate = result.EstimateDate
 
 	return estimate, nil
 }

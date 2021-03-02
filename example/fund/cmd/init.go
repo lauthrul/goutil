@@ -5,16 +5,19 @@ import (
 	"fund/config"
 	"fund/model"
 	"github.com/lauthrul/goutil/log"
+	"github.com/scylladb/go-set/strset"
 	"github.com/spf13/cobra"
-	"strings"
 	"time"
 )
 
 func InitCmd() *cobra.Command {
 	var (
 		configFile string
-		typ        string
-		withFav    bool
+		types      []string
+		fav        bool
+		group      []string
+		code       []string
+		name       string
 	)
 
 	cmd := &cobra.Command{
@@ -25,26 +28,38 @@ func InitCmd() *cobra.Command {
 			conf := config.Load(configFile)
 			Init(conf)
 
-			types := strings.Split(typ, ",")
-			if typ == "" || len(types) == 0 {
-				_ = cmd.Usage()
-				return
-			}
+			//types := strings.Split(typ, ",")
+			//if typ == "" || len(types) == 0 {
+			//	_ = cmd.Usage()
+			//	return
+			//}
 
-			codes := args
-			if withFav {
-				funds, err := model.ListFund(model.ListFundArg{
-					IsFav: true,
-				})
-				if err != nil {
-					return
-				}
+			listArg := model.ListFundArg{}
+			codes := strset.New(args...)
+			if len(group) > 0 {
+				funds, _ := model.ListGroupFund(group...)
 				for _, f := range funds {
-					codes = append(codes, f.Code)
+					codes.Add(f.FundCode)
 				}
 			}
-			if len(codes) == 0 {
-				fmt.Println(`no funds to init. you can specific fund codes, or use flag "-f,--with-Fav" to init favorite funds`)
+			if fav {
+				listArg.IsFav = true
+			}
+			if len(code) > 0 {
+				codes.Add(code...)
+			}
+			if len(name) > 0 {
+				listArg.Name = name
+			}
+			listArg.Code = codes.List()
+			funds, _ := model.ListFund(listArg)
+
+			codes.Clear()
+			for _, f := range funds {
+				codes.Add(f.Code)
+			}
+			if codes.Size() == 0 {
+				fmt.Println("please specific fund(s) code")
 				return
 			}
 
@@ -57,11 +72,11 @@ func InitCmd() *cobra.Command {
 				return false
 			}
 
-			log.DebugF("fund init type:%s, funds:%s", typ, codes)
+			log.DebugF("fund init type:%s, funds:%s", types, codes)
 
 			api := model.NewEastMoneyApi()
 
-			for _, code := range codes {
+			for _, code := range codes.List() {
 				if code == "" {
 					continue
 				}
@@ -168,8 +183,10 @@ func InitCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
-	cmd.Flags().StringVarP(&typ, "type", "t", "", `init type, can be one or all of [basic,manager,net_value,holdings,all], split by ","`)
-	cmd.Flags().BoolVarP(&withFav, "with-fav", "f", false, `analysis funds with fav`)
-
+	cmd.Flags().StringSliceVarP(&types, "type", "t", []string{"all"}, `init type, can be one or all of [basic,manager,net_value,holdings,all], split by ","`)
+	cmd.Flags().BoolVarP(&fav, "fav", "F", false, `choose fund in fav`)
+	cmd.Flags().StringSliceVarP(&group, "group", "G", nil, `choose fund in given group(s)`)
+	cmd.Flags().StringSliceVarP(&code, "code", "C", nil, `choose fund in given code(s)`)
+	cmd.Flags().StringVarP(&name, "name", "N", "", `choose fund with name(fuzzy match)`)
 	return cmd
 }
