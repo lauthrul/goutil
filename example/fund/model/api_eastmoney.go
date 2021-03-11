@@ -36,41 +36,25 @@ type EastMoneyFund struct {
 	FeeRate         string // 手续费
 }
 
-type EastMoneyFundBasic struct {
-	Code        string `json:"FCODE"`     // 代码
-	Name        string `json:"SHORTNAME"` // 简称
-	Type        string `json:"FTYPE"`     // 类型
-	CreateDate  string `json:"ESTABDATE"` // 成立日期
-	CreateScale string `json:"NETNAV"`    // 成立规模
-	LatestScale string `json:"ENDNAV"`    // 最新规模
-	UpdateDate  string `json:"FEGMRQ"`    // 更新日期
-	CompanyCode string `json:"JJGSID"`    // 基金公司代码
-	CompanyName string `json:"JJGS"`      // 基金公司名称
-	ManagerID   string `json:"JJJLID"`    // 基金经理id
-	ManagerName string `json:"JJJL"`      // 基金经理
-	ManageExp   string `json:"MGREXP"`    // 管理费率（年）
-	TrustExp    string `json:"TRUSTEXP"`  // 托管费率（年）
-}
-
-func (e EastMoneyFund) GetTHReference() []THReference {
-	return []THReference{
-		{lang.Text(common.Lan, "thCode"), true, "dm"},
-		{lang.Text(common.Lan, "thName"), true, "jc"},
-		{lang.Text(common.Lan, "thDate"), false, ""},
-		{lang.Text(common.Lan, "thNet"), true, "dwjz"},
-		{lang.Text(common.Lan, "thTotalNet"), true, "ljjz"},
-		{lang.Text(common.Lan, "thDateRate"), true, "rzdf"},
-		{lang.Text(common.Lan, "thWeekRate"), true, "zzf"},
-		{lang.Text(common.Lan, "thMonthRate"), true, "1yzf"},
-		{lang.Text(common.Lan, "th3MonthRate"), true, "3yzf"},
-		{lang.Text(common.Lan, "th6MonthRate"), true, "6yzf"},
-		{lang.Text(common.Lan, "thYearRate"), true, "1nzf"},
-		{lang.Text(common.Lan, "th2YearRate"), true, "2nzf"},
-		{lang.Text(common.Lan, "th3YearRate"), true, "3nzf"},
-		{lang.Text(common.Lan, "thThisYearRate"), true, "jnzf"},
-		{lang.Text(common.Lan, "thSinceFoundRate"), true, "lnzf"},
-		{lang.Text(common.Lan, "thCustomRate"), true, "qjzf"},
-		{lang.Text(common.Lan, "thFeeRate"), false, ""},
+func (e EastMoneyFund) GetMetas() []THMeta {
+	return []THMeta{
+		{lang.Text(common.Lan, "FundCode"), true, "dm"},
+		{lang.Text(common.Lan, "FundName"), true, "jc"},
+		{lang.Text(common.Lan, "Date"), false, ""},
+		{lang.Text(common.Lan, "NetValue"), true, "dwjz"},
+		{lang.Text(common.Lan, "TotalNetValue"), true, "ljjz"},
+		{lang.Text(common.Lan, "DayRate"), true, "rzdf"},
+		{lang.Text(common.Lan, "WeekRate"), true, "zzf"},
+		{lang.Text(common.Lan, "MonthRate"), true, "1yzf"},
+		{lang.Text(common.Lan, "3MonthRate"), true, "3yzf"},
+		{lang.Text(common.Lan, "6MonthRate"), true, "6yzf"},
+		{lang.Text(common.Lan, "YearRate"), true, "1nzf"},
+		{lang.Text(common.Lan, "2YearRate"), true, "2nzf"},
+		{lang.Text(common.Lan, "3YearRate"), true, "3nzf"},
+		{lang.Text(common.Lan, "ThisYearRate"), true, "jnzf"},
+		{lang.Text(common.Lan, "SinceCreateRate"), true, "lnzf"},
+		{lang.Text(common.Lan, "CustomRate"), true, "qjzf"},
+		{lang.Text(common.Lan, "FeeRate"), false, ""},
 	}
 }
 
@@ -99,6 +83,22 @@ func (e EastMoneyFund) GetValues() []string {
 		e.CustomRate,
 		e.FeeRate,
 	}
+}
+
+type EastMoneyFundBasic struct {
+	Code        string `json:"FCODE"`     // 代码
+	Name        string `json:"SHORTNAME"` // 简称
+	Type        string `json:"FTYPE"`     // 类型
+	CreateDate  string `json:"ESTABDATE"` // 成立日期
+	CreateScale string `json:"NETNAV"`    // 成立规模
+	LatestScale string `json:"ENDNAV"`    // 最新规模
+	UpdateDate  string `json:"FEGMRQ"`    // 更新日期
+	CompanyCode string `json:"JJGSID"`    // 基金公司代码
+	CompanyName string `json:"JJGS"`      // 基金公司名称
+	ManagerID   string `json:"JJJLID"`    // 基金经理id
+	ManagerName string `json:"JJJL"`      // 基金经理
+	ManageExp   string `json:"MGREXP"`    // 管理费率（年）
+	TrustExp    string `json:"TRUSTEXP"`  // 托管费率（年）
 }
 
 type EastMoneyManager struct {
@@ -174,8 +174,12 @@ func (api *EastMoneyApi) GetRandom() string {
 	return fmt.Sprintf("0.%d", time.Now().Unix())
 }
 
-func (api *EastMoneyApi) GetTHReference() []THReference {
-	return EastMoneyFund{}.GetTHReference()
+func (api *EastMoneyApi) GetFundRankMeta() []THMeta {
+	return EastMoneyFund{}.GetMetas()
+}
+
+func (api *EastMoneyApi) GetFundFavMeta() []THMeta {
+	return FundFav{}.GetMetas()
 }
 
 func (api *EastMoneyApi) GetFundRank(arg FundRankArg) (FundList, error) {
@@ -259,6 +263,10 @@ func (api *EastMoneyApi) GetFundRank(arg FundRankArg) (FundList, error) {
 	}
 
 	return funds, nil
+}
+
+func (api *EastMoneyApi) GetFundFav(arg FundFavArg) (FundList, error) {
+	return ListFundFav(arg)
 }
 
 func (api *EastMoneyApi) GetFundBasic(fundCode string) (FundBasic, error) {

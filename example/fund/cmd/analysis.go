@@ -58,7 +58,7 @@ func AnalysisCmd() *cobra.Command {
 					return
 				}
 				for _, f := range funds {
-					codes = append(codes, f.FundCode)
+					codes = append(codes, f.Code)
 				}
 			}
 			if len(codes) == 0 {

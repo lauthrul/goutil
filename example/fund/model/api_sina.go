@@ -98,25 +98,25 @@ type SinaFund struct {
 	//MinValue    string `json:"min_value"` // 起购金额
 }
 
-func (f SinaFund) GetTHReference() []THReference {
-	return []THReference{
-		{lang.Text(common.Lan, "thCode"), true, ""},
-		{lang.Text(common.Lan, "thName"), false, ""},
-		{lang.Text(common.Lan, "thType"), false, ""},
-		{lang.Text(common.Lan, "thScale"), true, "fund_scale"},
-		{lang.Text(common.Lan, "thFoundTime"), false, ""},
-		{lang.Text(common.Lan, "thManager"), false, ""},
-		{lang.Text(common.Lan, "thNet"), true, "netvalue"},
-		{lang.Text(common.Lan, "thTotalNet"), false, ""},
-		{lang.Text(common.Lan, "thDate"), false, ""},
-		{lang.Text(common.Lan, "thDateRate"), true, "day_incratio"},
-		{lang.Text(common.Lan, "thMonthRate"), true, "month_incratio"},
-		{lang.Text(common.Lan, "th3MonthRate"), true, "quarter_incratio"},
-		{lang.Text(common.Lan, "th6MonthRate"), true, "half_year_incratio"},
-		{lang.Text(common.Lan, "thYearRate"), true, "year_incratio"},
-		{lang.Text(common.Lan, "thThisYearRate"), true, "this_year_incratio"},
-		{lang.Text(common.Lan, "th3YearRate"), false, ""},
-		{lang.Text(common.Lan, "thSinceFoundRate"), false, ""},
+func (f SinaFund) GetMetas() []THMeta {
+	return []THMeta{
+		{lang.Text(common.Lan, "FundCode"), true, ""},
+		{lang.Text(common.Lan, "FundName"), false, ""},
+		{lang.Text(common.Lan, "FundType"), false, ""},
+		{lang.Text(common.Lan, "FundScale"), true, "fund_scale"},
+		{lang.Text(common.Lan, "CreateDate"), false, ""},
+		{lang.Text(common.Lan, "ManagerName"), false, ""},
+		{lang.Text(common.Lan, "NetValue"), true, "netvalue"},
+		{lang.Text(common.Lan, "TotalNetValue"), false, ""},
+		{lang.Text(common.Lan, "Date"), false, ""},
+		{lang.Text(common.Lan, "DayRate"), true, "day_incratio"},
+		{lang.Text(common.Lan, "MonthRate"), true, "month_incratio"},
+		{lang.Text(common.Lan, "3MonthRate"), true, "quarter_incratio"},
+		{lang.Text(common.Lan, "6MonthRate"), true, "half_year_incratio"},
+		{lang.Text(common.Lan, "YearRate"), true, "year_incratio"},
+		{lang.Text(common.Lan, "ThisYearRate"), true, "this_year_incratio"},
+		{lang.Text(common.Lan, "3YearRate"), false, ""},
+		{lang.Text(common.Lan, "SinceCreateRate"), false, ""},
 	}
 }
 
@@ -216,8 +216,8 @@ func NewSinaApi() *SinaApi {
 	}
 }
 
-func (api *SinaApi) GetTHReference() []THReference {
-	return SinaFund{}.GetTHReference()
+func (api *SinaApi) GetTHReference() []THMeta {
+	return SinaFund{}.GetMetas()
 }
 
 func (api *SinaApi) GetFundRank(arg FundRankArg) (FundList, error) {

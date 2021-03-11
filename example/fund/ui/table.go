@@ -78,7 +78,7 @@ func NewTB() *TB {
 	return tb
 }
 
-func (tb *TB) SetHeaders(refs ...model.THReference) *TB {
+func (tb *TB) SetHeaders(refs ...model.THMeta) *TB {
 	for i, r := range refs {
 		th := NewTH(" "+r.Text, tb)
 		th.col = i

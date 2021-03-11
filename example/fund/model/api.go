@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-type THReference struct {
+type THMeta struct {
 	Text        string
 	EnableOrder bool
 	OrderFiled  string
 }
 
 type Fund interface {
-	GetTHReference() []THReference
+	GetMetas() []THMeta
 	GetValues() []string
 }
 
@@ -66,10 +66,21 @@ func (f *FundRankArg) String() string {
 	)
 }
 
+type FundFavArg struct {
+	Group     string // 分组
+	IsFav     int    // -1-未指定 0-否 1-是
+	SortCode  string // 排序字段
+	SortType  string // asc-升序 desc-降序
+	PageIndex int    // 页码
+	PageSize  int    // 页大小
+}
+
 // api接口
 type Api interface {
-	GetTHReference() []THReference
+	GetFundRankMeta() []THMeta
+	GetFundFavMeta() []THMeta
 	GetFundRank(arg FundRankArg) (FundList, error)
+	GetFundFav(arg FundFavArg) (FundList, error)
 	GetFundBasic(fundCode string) (FundBasic, error)
 	GetFundManager(fundCode string) ([]Manager, []ManagerExperience, error)
 	GetFundHoldingStock(fundCode string, year int) ([]FundHoldingStock, error)

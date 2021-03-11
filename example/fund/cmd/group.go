@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"fund/config"
 	"fund/model"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func GroupCmd() *cobra.Command {
@@ -52,16 +54,13 @@ func GroupCmd() *cobra.Command {
 				if err != nil {
 					return
 				}
-				groups := map[string][]model.GroupFund{}
-				for _, d := range data {
-					groups[d.Group] = append(groups[d.Group], d)
+				table := tablewriter.NewWriter(os.Stdout)
+				table.SetHeader(model.GroupFund{}.GetTitles())
+				table.SetAlignment(tablewriter.ALIGN_RIGHT)
+				for _, v := range data {
+					table.Append(v.GetValues())
 				}
-				for g, funds := range groups {
-					fmt.Printf("Funds in group: %s (%d)\n", g, len(funds))
-					for _, f := range funds {
-						fmt.Printf("\t%s %s\n", f.FundCode, f.FundName)
-					}
-				}
+				table.Render()
 			}
 		},
 	}

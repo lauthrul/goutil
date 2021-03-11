@@ -3,13 +3,16 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"fund/common"
 	"fund/config"
+	"fund/lang"
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/jmoiron/sqlx"
 	"github.com/lauthrul/goutil/log"
 	_ "github.com/mattn/go-sqlite3"
+	"math"
 	"strings"
 	"time"
 )
@@ -55,29 +58,51 @@ type FundBasic struct {
 	Tags        string  `db:"tags"`         // 标签
 }
 
-func (f FundBasic) Titles() []string {
-	return []string{
-		"代码",
-		"简称",
-		"类型",
-		"成立日期",
-		"成立规模（元）",
-		"最新规模（元）",
-		"更新日期",
-		"基金公司代码",
-		"基金公司名称",
-		"基金经理ID",
-		"基金经理名称",
-		"管理费率（年）",
-		"托管费率（年）",
-		"是否收藏",
-		"排序id",
-		"备注",
-		"标签",
+func (f FundBasic) GetMetas() []THMeta {
+	return []THMeta{
+		{lang.Text(common.Lan, "FundCode"), true, "code"},
+		{lang.Text(common.Lan, "FundName"), true, "name"},
+		{lang.Text(common.Lan, "FundType"), true, "type"},
+		{lang.Text(common.Lan, "CreateDate"), true, "create_date"},
+		{lang.Text(common.Lan, "CreateScale"), true, "create_scale"},
+		{lang.Text(common.Lan, "LatestScale"), true, "latest_scale"},
+		{lang.Text(common.Lan, "UpdateDate"), true, "update_date"},
+		{lang.Text(common.Lan, "CompanyCode"), true, "company_code"},
+		{lang.Text(common.Lan, "CompanyName"), true, "company_name"},
+		{lang.Text(common.Lan, "ManagerID"), true, "manager_id"},
+		{lang.Text(common.Lan, "ManagerName"), true, "manager_name"},
+		{lang.Text(common.Lan, "ManageExp"), true, "manage_exp"},
+		{lang.Text(common.Lan, "TrustExp"), true, "trust_exp"},
+		{lang.Text(common.Lan, "IsFav"), true, "is_fav"},
+		{lang.Text(common.Lan, "SortId"), true, "sort_id"},
+		{lang.Text(common.Lan, "Remark"), false, "remark"},
+		{lang.Text(common.Lan, "Tags"), false, "tags"},
 	}
 }
 
-func (f FundBasic) Values() []string {
+func (f FundBasic) GetTitles() []string {
+	return []string{
+		lang.Text(common.Lan, "FundCode"),
+		lang.Text(common.Lan, "FundName"),
+		lang.Text(common.Lan, "FundType"),
+		lang.Text(common.Lan, "CreateDate"),
+		lang.Text(common.Lan, "CreateScale"),
+		lang.Text(common.Lan, "LatestScale"),
+		lang.Text(common.Lan, "UpdateDate"),
+		lang.Text(common.Lan, "CompanyCode"),
+		lang.Text(common.Lan, "CompanyName"),
+		lang.Text(common.Lan, "ManagerID"),
+		lang.Text(common.Lan, "ManagerName"),
+		lang.Text(common.Lan, "ManageExp"),
+		lang.Text(common.Lan, "TrustExp"),
+		lang.Text(common.Lan, "IsFav"),
+		lang.Text(common.Lan, "SortId"),
+		lang.Text(common.Lan, "Remark"),
+		lang.Text(common.Lan, "Tags"),
+	}
+}
+
+func (f FundBasic) GetValues() []string {
 	return []string{
 		f.Code,
 		f.Name,
@@ -99,6 +124,24 @@ func (f FundBasic) Values() []string {
 	}
 }
 
+type FundFav struct {
+	FundBasic
+	Group string `db:"group"`
+}
+
+func (f FundFav) GetMetas() []THMeta {
+	return append(f.FundBasic.GetMetas(),
+		THMeta{lang.Text(common.Lan, "Group"), true, "group"})
+}
+
+func (f FundFav) GetTitles() []string {
+	return append(f.FundBasic.GetTitles(), lang.Text(common.Lan, "Group"))
+}
+
+func (f FundFav) GetValues() []string {
+	return append(f.FundBasic.GetValues(), f.Group)
+}
+
 // 分组名
 type Group struct {
 	Name string `db:"name"`
@@ -112,9 +155,16 @@ type FundGroup struct {
 
 // 基金分组视图
 type GroupFund struct {
-	FundCode string `db:"fund_code"`
-	FundName string `db:"fund_name"`
-	Group    string `db:"group"`
+	FundBasic
+	Group string `db:"group"`
+}
+
+func (g GroupFund) GetTitles() []string {
+	return append(g.FundBasic.GetTitles(), lang.Text(common.Lan, "Group"))
+}
+
+func (g GroupFund) GetValues() []string {
+	return append(g.FundBasic.GetValues(), g.Group)
 }
 
 // 基金经理
@@ -160,7 +210,7 @@ type FundManager struct {
 	Resume        string  `db:"resume"`
 }
 
-func (f FundManager) Titles() []string {
+func (f FundManager) GetTitles() []string {
 	return []string{
 		"基金代码",
 		"基金名称",
@@ -179,7 +229,7 @@ func (f FundManager) Titles() []string {
 	}
 }
 
-func (f FundManager) Values() []string {
+func (f FundManager) GetValues() []string {
 	return []string{
 		f.FundCode,
 		f.FundName,
@@ -211,7 +261,7 @@ type FundHoldingStock struct {
 	StockValue   float64 `db:"stock_value"`   // 持仓市值，万元
 }
 
-func (f FundHoldingStock) Titles() []string {
+func (f FundHoldingStock) GetTitles() []string {
 	return []string{
 		"基金代码",
 		"基金简称",
@@ -225,7 +275,7 @@ func (f FundHoldingStock) Titles() []string {
 	}
 }
 
-func (f FundHoldingStock) Values() []string {
+func (f FundHoldingStock) GetValues() []string {
 	return []string{
 		f.FundCode,
 		f.FundName,
@@ -259,7 +309,7 @@ type FundEstimate struct {
 	EstimateDate string  `json:"gztime"`   // 估值日期 	2018-09-25 15:00
 }
 
-func (f FundEstimate) Titles() []string {
+func (f FundEstimate) GetTitles() []string {
 	return []string{
 		"基金代码",
 		"基金简称",
@@ -271,7 +321,7 @@ func (f FundEstimate) Titles() []string {
 	}
 }
 
-func (f FundEstimate) Values() []string {
+func (f FundEstimate) GetValues() []string {
 	return []string{
 		f.Code,
 		f.Name,
@@ -530,6 +580,59 @@ func ListGroupFund(group ...string) ([]GroupFund, error) {
 		log.ErrorF("%q: %s", err, stat)
 	}
 	return list, err
+}
+
+func ListFundFav(arg FundFavArg) (FundList, error) {
+	ex := goqu.Ex{}
+	order := exp.OrderedExpression(nil)
+	if len(arg.Group) > 0 {
+		ex["group"] = arg.Group
+	}
+	if arg.IsFav >= 0 {
+		ex["is_fav"] = arg.IsFav
+	}
+	if len(arg.SortCode) > 0 {
+		if arg.SortType == "desc" {
+			order = goqu.C(arg.SortCode).Desc()
+		} else {
+			order = goqu.C(arg.SortCode).Asc()
+		}
+	}
+	var (
+		list  FundList
+		funds []FundFav
+	)
+	stat, _, err := dialect.Select(goqu.COUNT(1)).From(viewGroupFund).Where(ex).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Get(&list.TotalCount, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	list.PageSize = arg.PageSize
+	list.PageIndex = arg.PageIndex
+	list.TotalPage = int(math.Ceil(float64(list.TotalCount) / float64(arg.PageSize)))
+	sd := dialect.From(viewGroupFund).Where(ex)
+	if order != nil {
+		sd = sd.Order(order)
+	}
+	stat, _, err = sd.Offset(uint((arg.PageIndex - 1) * arg.PageSize)).Limit(uint(arg.PageSize)).ToSQL()
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	err = GetDB().Select(&funds, stat)
+	if err != nil {
+		log.ErrorF("%q: %s", err, stat)
+		return list, err
+	}
+	for _, f := range funds {
+		list.List = append(list.List, f)
+	}
+	return list, nil
 }
 
 func AddGroupFund(fundCode []string, group ...string) error {

@@ -31,7 +31,7 @@ func (f *FundPage) create() {
 	fmt.Fprintf(f.menu, `["%s"][white]%s[white][""]  `, MenuNameFav, lang.Text(common.Lan, "navFav"))
 	f.menu.SetRegions(true).
 		SetDynamicColors(true).
-		Highlight(MenuNameRank).
+		Highlight(MenuNameFav).
 		SetHighlightedFunc(f.onMenuChange)
 	f.menu.SetBackgroundColor(bgColor).
 		SetBorderPadding(0, 0, 2, 2)
@@ -39,7 +39,9 @@ func (f *FundPage) create() {
 	// pages
 	f.pages = tview.NewPages()
 	fundRankPage := NewFundRankPage(f.pages)
+	fundFavPage := NewFundFavPage(f.pages)
 	f.pages.AddPage(MenuNameRank, fundRankPage, true, true)
+	f.pages.AddPage(MenuNameFav, fundFavPage, true, true)
 
 	// layout
 	f.Primitive = tview.NewFlex().SetDirection(tview.FlexRow).

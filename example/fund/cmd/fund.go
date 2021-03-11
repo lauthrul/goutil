@@ -51,7 +51,7 @@ func FundCmd() *cobra.Command {
 			if len(group) > 0 {
 				funds, _ := model.ListGroupFund(group...)
 				for _, f := range funds {
-					codes.Add(f.FundCode)
+					codes.Add(f.Code)
 				}
 			}
 			if fav {
@@ -68,10 +68,10 @@ func FundCmd() *cobra.Command {
 
 			if list {
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader(model.FundBasic{}.Titles())
+				table.SetHeader(model.FundBasic{}.GetTitles())
 				table.SetAlignment(tablewriter.ALIGN_RIGHT)
 				for _, v := range funds {
-					table.Append(v.Values())
+					table.Append(v.GetValues())
 				}
 				table.Render()
 				return
@@ -104,10 +104,10 @@ func FundCmd() *cobra.Command {
 					return
 				}
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader(model.FundManager{}.Titles())
+				table.SetHeader(model.FundManager{}.GetTitles())
 				table.SetAlignment(tablewriter.ALIGN_RIGHT)
 				for _, v := range data {
-					table.Append(v.Values())
+					table.Append(v.GetValues())
 				}
 				table.Render()
 			}
@@ -131,10 +131,10 @@ func FundCmd() *cobra.Command {
 					})
 				}
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader(model.FundEstimate{}.Titles())
+				table.SetHeader(model.FundEstimate{}.GetTitles())
 				table.SetAlignment(tablewriter.ALIGN_RIGHT)
 				for _, v := range data {
-					table.Append(v.Values())
+					table.Append(v.GetValues())
 				}
 				table.Render()
 			}
@@ -149,10 +149,10 @@ func FundCmd() *cobra.Command {
 					data, _ = model.ListFundHoldings(season, codes.List()...)
 				}
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader(model.FundHoldingStock{}.Titles())
+				table.SetHeader(model.FundHoldingStock{}.GetTitles())
 				table.SetAlignment(tablewriter.ALIGN_RIGHT)
 				for _, v := range data {
-					table.Append(v.Values())
+					table.Append(v.GetValues())
 				}
 				table.Render()
 			}

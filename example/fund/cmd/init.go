@@ -28,18 +28,12 @@ func InitCmd() *cobra.Command {
 			conf := config.Load(configFile)
 			Init(conf)
 
-			//types := strings.Split(typ, ",")
-			//if typ == "" || len(types) == 0 {
-			//	_ = cmd.Usage()
-			//	return
-			//}
-
 			listArg := model.ListFundArg{}
 			codes := strset.New(args...)
 			if len(group) > 0 {
 				funds, _ := model.ListGroupFund(group...)
 				for _, f := range funds {
-					codes.Add(f.FundCode)
+					codes.Add(f.Code)
 				}
 			}
 			if fav {

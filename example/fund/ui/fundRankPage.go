@@ -30,8 +30,8 @@ func NewFundRankPage(parent *tview.Pages) FundRankPage {
 	f := FundRankPage{parent: parent}
 
 	// table
-	refs := []model.THReference{ /*{" ", false, ""},*/ {"#", false, ""}}
-	refs = append(refs, api.GetTHReference()...)
+	refs := []model.THMeta{ /*{" ", false, ""},*/ {"#", false, ""}}
+	refs = append(refs, api.GetFundRankMeta()...)
 	f.table = NewTB()
 	f.table.SetHeaders(refs...).
 		SetOrderFunc(f.onTableOrderChange).
@@ -83,6 +83,7 @@ func (f *FundRankPage) update() {
 func (f *FundRankPage) onPrevPage() {
 	f.curPage -= 1
 	if f.curPage < 1 {
+		f.curPage = 1
 		return
 	}
 	log.Debug("prev page", f.curPage)
@@ -92,6 +93,7 @@ func (f *FundRankPage) onPrevPage() {
 func (f *FundRankPage) onNextPage() {
 	f.curPage += 1
 	if f.curPage > f.totalPage {
+		f.curPage = f.totalPage
 		return
 	}
 	log.Debug("next page", f.curPage)
@@ -148,7 +150,7 @@ func (f *FundRankPage) updatePage(page, pageSize, orderCol int, orderType Order)
 			values := []string{ /*"☆", */ fmt.Sprintf("%d", (page-1)*pageSize+i+1)}
 			values = append(values, fund.GetValues()...)
 			f.table.UpdateRow(i, values...)
-			f.table.GetCell(i, 0).SetReference(fund)
+			f.table.GetCell(i+1, 0).SetReference(fund)
 			f.edit.SetText(fmt.Sprintf("%d", f.curPage))
 			f.total.SetText(fmt.Sprintf("/%d", result.TotalPage))
 		}
