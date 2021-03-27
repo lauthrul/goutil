@@ -14,16 +14,20 @@ import (
 
 type FundFavPage struct {
 	tview.Primitive
-	parent    *tview.Pages
-	layout    *tview.Flex
-	table     *TB
-	btnPrev   *tview.Button
-	btnNext   *tview.Button
-	edit      *tview.InputField
-	total     *tview.TextView
-	btnGo     *tview.Button
-	curPage   int
-	totalPage int
+	parent      *tview.Pages
+	layout      *tview.Flex
+	table       *TB
+	groups      *tview.DropDown
+	btnAddGroup *tview.Button
+	btnUpdate   *tview.Button
+	btnPrev     *tview.Button
+	btnNext     *tview.Button
+	edit        *tview.InputField
+	total       *tview.TextView
+	btnGo       *tview.Button
+	curGroup    string
+	curPage     int
+	totalPage   int
 }
 
 func NewFundFavPage(parent *tview.Pages) FundFavPage {
@@ -35,10 +39,24 @@ func NewFundFavPage(parent *tview.Pages) FundFavPage {
 	f.table = NewTB()
 	f.table.SetHeaders(refs...).
 		SetOrderFunc(f.onTableOrderChange).
-		SetSelectionChangedFunc(f.onSelectChange)/*.
-		SetSelectedFunc(f.onShowDetail).
-		SetMouseCapture(f.mouseCapture)*/
+		SetSelectionChangedFunc(f.onSelectChange) /*.
+	SetSelectedFunc(f.onShowDetail).
+	SetMouseCapture(f.mouseCapture)*/
 	f.table.SetBackgroundColor(bgColor)
+
+	//
+	f.groups = tview.NewDropDown()
+	groups := []string{"--分组--"}
+	g, _ := model.ListGroup()
+	groups = append(groups, g...)
+	f.groups.SetOptions(groups, f.onGroupChange).SetCurrentOption(0).
+		SetFieldBackgroundColor(btnColor).SetBackgroundColor(btnColor)
+
+	f.btnAddGroup = tview.NewButton("+").SetSelectedFunc(f.onAddGroup)
+	f.btnAddGroup.SetBackgroundColor(btnColor)
+
+	f.btnUpdate = tview.NewButton("∽").SetSelectedFunc(f.onUpdateEstimate)
+	f.btnUpdate.SetBackgroundColor(btnColor)
 
 	// page navigator
 	box := tview.NewTextView().SetBackgroundColor(bgColor)
@@ -58,6 +76,9 @@ func NewFundFavPage(parent *tview.Pages) FundFavPage {
 	f.btnGo.SetBackgroundColor(btnColor)
 	pager := tview.NewFlex()
 	pager.SetDirection(tview.FlexColumn).
+		AddItem(f.groups, 8, 1, false).
+		AddItem(f.btnAddGroup, 4, 1, false).
+		AddItem(f.btnUpdate, 4, 1, false).
 		AddItem(box, 0, 8, false).
 		AddItem(f.edit, 8, 1, false).
 		AddItem(f.total, 8, 1, false).
@@ -69,6 +90,7 @@ func NewFundFavPage(parent *tview.Pages) FundFavPage {
 	f.layout = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(f.table, 0, 5, true).
 		AddItem(pager, 1, 1, false)
+	f.layout.SetMouseCapture(f.onMouseCapture)
 	f.Primitive = f.layout
 
 	f.update()
@@ -77,7 +99,7 @@ func NewFundFavPage(parent *tview.Pages) FundFavPage {
 }
 
 func (f *FundFavPage) update() {
-	f.updatePage(1, size, 1, ASC)
+	f.updatePage("", 1, size, 1, ASC)
 }
 
 func (f *FundFavPage) onPrevPage() {
@@ -87,7 +109,7 @@ func (f *FundFavPage) onPrevPage() {
 		return
 	}
 	log.Debug("prev page", f.curPage)
-	f.updatePage(f.curPage, size, f.table.orderCol, f.table.orderType)
+	f.updatePage(f.curGroup, f.curPage, size, f.table.orderCol, f.table.orderType)
 }
 
 func (f *FundFavPage) onNextPage() {
@@ -97,7 +119,7 @@ func (f *FundFavPage) onNextPage() {
 		return
 	}
 	log.Debug("next page", f.curPage)
-	f.updatePage(f.curPage, size, f.table.orderCol, f.table.orderType)
+	f.updatePage(f.curGroup, f.curPage, size, f.table.orderCol, f.table.orderType)
 }
 
 func (f *FundFavPage) onGoPage() {
@@ -111,14 +133,14 @@ func (f *FundFavPage) onGoPage() {
 	}
 	f.curPage = util.Clamp(f.curPage, 1, f.totalPage)
 	log.Debug("go page", n)
-	f.updatePage(n, size, f.table.orderCol, f.table.orderType)
+	f.updatePage(f.curGroup, n, size, f.table.orderCol, f.table.orderType)
 }
 
 func (f *FundFavPage) onEditDone(key tcell.Key) {
 	f.onGoPage()
 }
 
-func (f *FundFavPage) updatePage(page, pageSize, orderCol int, orderType Order) {
+func (f *FundFavPage) updatePage(group string, page, pageSize, orderCol int, orderType Order) {
 	go func() {
 		sortCode, sortType := "", ""
 		if h := f.table.headers[orderCol]; h != nil {
@@ -132,7 +154,7 @@ func (f *FundFavPage) updatePage(page, pageSize, orderCol int, orderType Order) 
 			}
 		}
 		result, err := api.GetFundFav(model.FundFavArg{
-			Group:     "",
+			Group:     group,
 			IsFav:     -1,
 			SortCode:  sortCode,
 			SortType:  sortType,
@@ -165,46 +187,68 @@ func (f *FundFavPage) updatePage(page, pageSize, orderCol int, orderType Order) 
 
 func (f *FundFavPage) onTableOrderChange(col int, order Order) {
 	log.Debug("order by", col, order)
-	f.updatePage(1, size, col, order)
+	f.updatePage(f.curGroup, 1, size, col, order)
 }
 
 func (f *FundFavPage) onSelectChange(row, column int) {
 	log.Debug("select", row, column)
 }
 
-//func (f *FundFavPage) onShowDetail(row, column int) {
-//	log.Debug("show detail", row, column)
-//	ref := f.table.GetCell(row, 0).GetReference()
-//	if fund, ok := ref.(model.EastMoneyFund); ok {
-//		log.DebugF("%+v", fund)
-//		form := tview.NewForm().
-//			AddInputField("Fund", fmt.Sprintf("%s %s", fund.Code, fund.Name), 20, nil, nil).
-//			AddInputField("NetDate", fund.NetDate, 20, nil, nil).
-//			AddInputField("NetValue", fmt.Sprintf("%s|%s", fund.NetValue, fund.TotalNetValue), 20, nil, nil).
-//			AddButton("Save", nil).
-//			AddButton("Quit", func() {
-//				f.parent.RemovePage("form")
-//			}).SetFocus(0)
-//		title := fmt.Sprintf("%s %s", fund.Code, fund.Name)
-//		form.SetBorder(true).SetTitle(title).SetTitleAlign(tview.AlignLeft).
-//			SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-//				if event.Key() == tcell.KeyESC {
-//					f.parent.RemovePage("form")
-//				}
-//				return event
-//			})
-//		modal := func(p tview.Primitive) tview.Primitive {
-//			return tview.NewGrid().SetColumns(-1, -3, -1).SetRows(-1, -3, -1).AddItem(p, 1, 1, 1, 1, 0, 0, true)
-//		}
-//		f.parent.AddPage("form", modal(form), true, true).ShowPage("form")
-//	}
-//}
-//
-//func (f *FundFavPage) mouseCapture(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-//	row, col := f.table.GetSelection()
-//	if action == tview.MouseLeftDoubleClick {
-//		log.Debug("double click", row, col)
-//		f.onShowDetail(row, col)
-//	}
-//	return action, event
-//}
+func (f *FundFavPage) onGroupChange(text string, index int) {
+	log.Debug("onGroupChange: ", text, index)
+	if index == 0 {
+		text = ""
+	}
+	f.curGroup = text
+	f.updatePage(f.curGroup, f.curPage, size, f.table.orderCol, f.table.orderType)
+}
+
+func (f *FundFavPage) onAddGroup() {
+	const formName = "addGroupForm"
+	var addGroupForm *tview.Form
+	fnCancel := func() {
+		f.parent.RemovePage(formName)
+	}
+	fnOK := func() {
+		groupCtrl := addGroupForm.GetFormItemByLabel("Group").(*tview.InputField)
+		group := groupCtrl.GetText()
+		log.Debug("add group: ", group)
+		if err := model.AddGroup(group); err == nil {
+			f.groups.AddOption(group, nil)
+		}
+		fnCancel()
+	}
+	addGroupForm = tview.NewForm().
+		AddInputField("Group", "", 0, nil, nil).
+		AddButton(lang.Text(common.Lan, "btnOK"), fnOK).
+		AddButton(lang.Text(common.Lan, "btnCancel"), fnCancel).
+		SetFocus(0)
+	addGroupForm.SetBorder(true).SetTitle(lang.Text(common.Lan, "NewGroup")).SetTitleAlign(tview.AlignLeft).
+		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyESC {
+				fnCancel()
+			}
+			return event
+		})
+	modal := func(p tview.Primitive) tview.Primitive {
+		return tview.NewGrid().SetColumns(-1, 30, -1).SetRows(-1, 8, -1).AddItem(p, 1, 1, 1, 1, 0, 0, true)
+	}
+	f.parent.AddPage(formName, modal(addGroupForm), true, true).ShowPage(formName)
+}
+
+func (f *FundFavPage) onMouseCapture(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	if action == tview.MouseLeftDown {
+		x, y := event.Position()
+		inRect := f.groups.GetList().InRect(x, y)
+		if inRect {
+			f.groups.MouseHandler()(action, event, func(p tview.Primitive) {
+				app.SetFocus(p)
+			})
+		}
+	}
+	return action, event
+}
+
+func (f *FundFavPage) onUpdateEstimate() {
+
+}

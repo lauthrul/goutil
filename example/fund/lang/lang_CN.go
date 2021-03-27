@@ -5,6 +5,8 @@ var langCN = map[string]string{
 	"menuFund":        "基金",
 	"navRank":         "排行", // nav
 	"navFav":          "自选",
+	"btnOK":           "确定",
+	"btnCancel":       "取消",
 	"btnPrevPage":     "<<",
 	"btnNextPage":     ">>",
 	"btnGo":           "跳转",
@@ -28,6 +30,10 @@ var langCN = map[string]string{
 	"Tags":            "标签",
 	"NetValue":        "净值",
 	"TotalNetValue":   "累计净值",
+	"Growth":          "涨幅%",
+	"EstimateTime":    "估算时间",
+	"EstimateNet":     "估值",
+	"EstimateRate":    "估算涨幅",
 	"Date":            "日期",
 	"DayRate":         "日涨幅%",
 	"WeekRate":        "近1周%",
@@ -42,4 +48,5 @@ var langCN = map[string]string{
 	"CustomRate":      "自定义%",
 	"FeeRate":         "手续费",
 	"Group":           "分组",
+	"NewGroup":        "新建分组",
 }

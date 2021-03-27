@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	size = 20
+	size = 40
 )
 
 type FundPage struct {

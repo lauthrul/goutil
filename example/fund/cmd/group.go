@@ -50,12 +50,12 @@ func GroupCmd() *cobra.Command {
 				fmt.Println(data)
 			}
 			if funds {
-				data, err := model.ListGroupFund(args...)
+				data, err := model.ListFundGroup(args...)
 				if err != nil {
 					return
 				}
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader(model.GroupFund{}.GetTitles())
+				table.SetHeader(model.ViewFundGroup{}.GetTitles())
 				table.SetAlignment(tablewriter.ALIGN_RIGHT)
 				for _, v := range data {
 					table.Append(v.GetValues())

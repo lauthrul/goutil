@@ -5,6 +5,8 @@ var langEN = map[string]string{
 	"menuFund":        "Fund",
 	"navRank":         "Rank", // nav
 	"navFav":          "Fav",
+	"btnOK":           "OK",
+	"btnCancel":       "Cancel",
 	"btnPrevPage":     "<<",
 	"btnNextPage":     ">>",
 	"btnGo":           "Go",
@@ -28,6 +30,10 @@ var langEN = map[string]string{
 	"Tags":            "Tags",
 	"NetValue":        "Net.",
 	"TotalNetValue":   "Total Net.",
+	"Growth":          "Growth%",
+	"EstimateTime":    "Est Time",
+	"EstimateNet":     "Est Net.",
+	"EstimateRate":    "Est%",
 	"Date":            "Date",
 	"DayRate":         "D%",
 	"WeekRate":        "W%",
@@ -42,4 +48,5 @@ var langEN = map[string]string{
 	"CustomRate":      "Custom%",
 	"FeeRate":         "Fee",
 	"Group":           "Group",
+	"NewGroup":        "New Group",
 }

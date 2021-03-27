@@ -31,7 +31,7 @@ func InitCmd() *cobra.Command {
 			listArg := model.ListFundArg{}
 			codes := strset.New(args...)
 			if len(group) > 0 {
-				funds, _ := model.ListGroupFund(group...)
+				funds, _ := model.ListFundGroup(group...)
 				for _, f := range funds {
 					codes.Add(f.Code)
 				}

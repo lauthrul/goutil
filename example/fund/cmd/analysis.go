@@ -53,7 +53,7 @@ func AnalysisCmd() *cobra.Command {
 				}
 			}
 			if len(group) > 0 {
-				funds, err := model.ListGroupFund(group...)
+				funds, err := model.ListFundGroup(group...)
 				if err != nil {
 					return
 				}

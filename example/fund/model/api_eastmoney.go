@@ -8,6 +8,7 @@ import (
 	"github.com/lauthrul/goutil/log"
 	"github.com/lauthrul/goutil/util"
 	"golang.org/x/net/html"
+	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -266,7 +267,35 @@ func (api *EastMoneyApi) GetFundRank(arg FundRankArg) (FundList, error) {
 }
 
 func (api *EastMoneyApi) GetFundFav(arg FundFavArg) (FundList, error) {
-	return ListFundFav(arg)
+	var list FundList
+	overviews, counts, err := ListFundOverView(arg)
+	if err != nil {
+		return list, err
+	}
+	for _, v := range overviews {
+		f := FundFav{
+			ViewFundOverView: v,
+		}
+		if est, err := api.GetFundEstimate(f.Code); err == nil {
+			f.EstimateDate = est.EstimateDate
+			f.EstimateNet = est.EstimateNet
+			f.EstimateRate = est.EstimateRate
+		}
+		list.List = append(list.List, f)
+	}
+	if arg.SortCode == "" {
+		sort.Slice(list.List, func(i, j int) bool {
+			if arg.SortType == "asc" {
+				return list.List[i].(FundFav).EstimateRate < list.List[j].(FundFav).EstimateRate
+			}
+			return list.List[i].(FundFav).EstimateRate > list.List[j].(FundFav).EstimateRate
+		})
+	}
+	list.TotalCount = counts
+	list.PageSize = arg.PageSize
+	list.PageIndex = arg.PageIndex
+	list.TotalPage = int(math.Ceil(float64(list.TotalCount) / float64(arg.PageSize)))
+	return list, nil
 }
 
 func (api *EastMoneyApi) GetFundBasic(fundCode string) (FundBasic, error) {
@@ -552,6 +581,11 @@ func (api *EastMoneyApi) GetFundEstimate(fundCode string) (FundEstimate, error) 
 	}
 
 	data := string(resp.Body())
+	if len(data) == 0 {
+		log.ErrorF("empty data: %s", url)
+		return estimate, err
+	}
+
 	data = data[strings.Index(data, "(")+1 : strings.LastIndex(data, ")")]
 	var result EastMoneyFundEstimate
 	err = util.Json.UnmarshalFromString(data, &result)

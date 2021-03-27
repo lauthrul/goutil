@@ -49,7 +49,7 @@ func FundCmd() *cobra.Command {
 			listArg := model.ListFundArg{}
 			codes := strset.New(args...)
 			if len(group) > 0 {
-				funds, _ := model.ListGroupFund(group...)
+				funds, _ := model.ListFundGroup(group...)
 				for _, f := range funds {
 					codes.Add(f.Code)
 				}
@@ -104,7 +104,7 @@ func FundCmd() *cobra.Command {
 					return
 				}
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader(model.FundManager{}.GetTitles())
+				table.SetHeader(model.ViewFundManager{}.GetTitles())
 				table.SetAlignment(tablewriter.ALIGN_RIGHT)
 				for _, v := range data {
 					table.Append(v.GetValues())
