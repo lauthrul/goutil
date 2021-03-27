@@ -451,6 +451,13 @@ type ListFundArg struct {
 	Name  string
 }
 
+type ListFundGroupArg struct {
+	IsFav int
+	Group []string
+	Code  []string
+	Name  string
+}
+
 func GetDB() *sqlx.DB {
 	if db == nil {
 		var err error
@@ -676,13 +683,22 @@ func ListGroup() ([]string, error) {
 	return list, err
 }
 
-func ListFundGroup(group ...string) ([]ViewFundGroup, error) {
+func ListFundGroup(arg ListFundGroupArg) ([]ViewFundGroup, error) {
 	var list []ViewFundGroup
-	ex := goqu.Ex{}
-	if len(group) > 0 {
-		ex["group"] = group
+	var exs []exp.Expression
+	if arg.IsFav > 0 {
+		exs = append(exs, goqu.Ex{"is_fav": arg.IsFav})
 	}
-	stat, _, err := dialect.From(viewFundGroup).Where(ex).ToSQL()
+	if len(arg.Group) > 0 {
+		exs = append(exs, goqu.Ex{"group": arg.Group})
+	}
+	if len(arg.Code) > 0 {
+		exs = append(exs, goqu.Ex{"code": arg.Code})
+	}
+	if len(arg.Name) > 0 {
+		exs = append(exs, goqu.C("name").Like(fmt.Sprintf("%%%s%%", arg.Name)))
+	}
+	stat, _, err := dialect.From(viewFundGroup).Where(exs...).ToSQL()
 	if err != nil {
 		log.ErrorF("%q: %s", err, stat)
 		return list, err

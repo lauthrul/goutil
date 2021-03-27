@@ -47,10 +47,12 @@ func GroupCmd() *cobra.Command {
 				if err != nil {
 					return
 				}
-				fmt.Println(data)
+				for _, d := range data {
+					fmt.Println(d)
+				}
 			}
 			if funds {
-				data, err := model.ListFundGroup(args...)
+				data, err := model.ListFundGroup(model.ListFundGroupArg{IsFav: -1, Group: args})
 				if err != nil {
 					return
 				}
@@ -67,11 +69,11 @@ func GroupCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
 	cmd.Flags().BoolVarP(&add, "add", "a", false, "add group(s)")
-	cmd.Flags().BoolVarP(&remove, "remove", "r", false, "remove group(s)")
-	cmd.Flags().StringSliceVarP(&addFund, "add-fund", "f", nil, "add fund(s) to group")
-	cmd.Flags().StringSliceVarP(&removeFund, "remove-fund", "F", nil, "remove fund(s) from group")
+	cmd.Flags().BoolVarP(&remove, "del", "d", false, "delete group(s)")
+	cmd.Flags().StringSliceVarP(&addFund, "add-fund", "A", nil, "add fund(s) to group")
+	cmd.Flags().StringSliceVarP(&removeFund, "del-fund", "D", nil, "delete fund(s) from group")
 	cmd.Flags().BoolVarP(&list, "list", "l", false, "list all groups")
-	cmd.Flags().BoolVarP(&funds, "funds", "", false, "list funds by given group name")
+	cmd.Flags().BoolVarP(&funds, "list-fund", "f", false, "list funds under group")
 
 	return cmd
 }

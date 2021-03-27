@@ -46,29 +46,18 @@ func FundCmd() *cobra.Command {
 				return
 			}
 
-			listArg := model.ListFundArg{}
-			codes := strset.New(args...)
-			if len(group) > 0 {
-				funds, _ := model.ListFundGroup(group...)
-				for _, f := range funds {
-					codes.Add(f.Code)
+			listArg := model.ListFundGroupArg{IsFav: -1, Group: group, Code: append(code, args...), Name: name}
+			if cmd.Flags().Changed("fav") {
+				listArg.IsFav = 0
+				if fav {
+					listArg.IsFav = 1
 				}
 			}
-			if fav {
-				listArg.IsFav = true
-			}
-			if len(code) > 0 {
-				codes.Add(code...)
-			}
-			if len(name) > 0 {
-				listArg.Name = name
-			}
-			listArg.Code = codes.List()
-			funds, _ := model.ListFund(listArg)
+			funds, _ := model.ListFundGroup(listArg)
 
 			if list {
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader(model.FundBasic{}.GetTitles())
+				table.SetHeader(model.ViewFundGroup{}.GetTitles())
 				table.SetAlignment(tablewriter.ALIGN_RIGHT)
 				for _, v := range funds {
 					table.Append(v.GetValues())
@@ -77,7 +66,7 @@ func FundCmd() *cobra.Command {
 				return
 			}
 
-			codes.Clear()
+			codes := strset.New()
 			for _, f := range funds {
 				codes.Add(f.Code)
 			}

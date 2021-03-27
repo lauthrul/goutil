@@ -5,6 +5,7 @@ import (
 	"fund/config"
 	"fund/model"
 	"github.com/lauthrul/goutil/log"
+	"github.com/scylladb/go-set/strset"
 	"github.com/spf13/cobra"
 	"sort"
 )
@@ -28,8 +29,10 @@ type MostHolding struct {
 func AnalysisCmd() *cobra.Command {
 	var (
 		configFile string
-		withFav    bool
+		fav        bool
 		group      []string
+		code       []string
+		name       string
 	)
 
 	cmd := &cobra.Command{
@@ -40,35 +43,26 @@ func AnalysisCmd() *cobra.Command {
 			conf := config.Load(configFile)
 			Init(conf)
 
-			codes := args
-			if withFav {
-				funds, err := model.ListFund(model.ListFundArg{
-					IsFav: true,
-				})
-				if err != nil {
-					return
-				}
-				for _, f := range funds {
-					codes = append(codes, f.Code)
+			listArg := model.ListFundGroupArg{IsFav: -1, Group: group, Code: append(code, args...), Name: name}
+			if cmd.Flags().Changed("fav") {
+				listArg.IsFav = 0
+				if fav {
+					listArg.IsFav = 1
 				}
 			}
-			if len(group) > 0 {
-				funds, err := model.ListFundGroup(group...)
-				if err != nil {
-					return
-				}
-				for _, f := range funds {
-					codes = append(codes, f.Code)
-				}
+			codes := strset.New()
+			funds, _ := model.ListFundGroup(listArg)
+			for _, f := range funds {
+				codes.Add(f.Code)
 			}
-			if len(codes) == 0 {
+			if codes.Size() == 0 {
 				fmt.Println(`no funds to analysis. you can specific fund codes, or use flag "-f,--with-Fav" to analysis favorite funds`)
 				return
 			}
 
 			log.DebugF("analysis funds:%s", codes)
 
-			holdings, err := model.GetLatestHoldingStock(codes...)
+			holdings, err := model.GetLatestHoldingStock(codes.List()...)
 			if err != nil {
 				log.Error(err)
 				return
@@ -162,8 +156,9 @@ func AnalysisCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&configFile, "config", "c", "config.json", "config file")
-	cmd.Flags().BoolVarP(&withFav, "with-fav", "f", false, `analysis funds with fav`)
-	cmd.Flags().StringSliceVarP(&group, "group", "g", nil, `analysis funds in given group name(s)`)
-
+	cmd.Flags().BoolVarP(&fav, "fav", "F", false, `choose funds with fav`)
+	cmd.Flags().StringSliceVarP(&group, "group", "G", nil, `choose funds in given group name(s)`)
+	cmd.Flags().StringSliceVarP(&code, "code", "C", nil, `choose funds in given code(s)`)
+	cmd.Flags().StringVarP(&name, "name", "N", "", `choose funds with name(fuzzy match)`)
 	return cmd
 }
