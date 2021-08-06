@@ -37,6 +37,7 @@ func RegisterRule(key string, rule FnRule) {
 //				* default -	default value if empty
 //				* min -		min value numeric value or min length for string
 //				* max -		max value numeric value or max length for string
+//				* values -	value must be in values
 //				* msg -		error message return if validate fail
 // for example：
 //				type ListParam struct {
@@ -81,13 +82,14 @@ func Bind(data string, param interface{}) error {
 		v := rv.Field(i)
 
 		var (
-			name  string
-			rule  string
-			empty bool = false
-			def   string
-			min   int64 = math.MinInt64
-			max   int64 = math.MaxInt64
-			msg   string
+			name   string
+			rule   string
+			empty  bool = false
+			def    string
+			values []string
+			min    int64 = math.MinInt64
+			max    int64 = math.MaxInt64
+			msg    string
 		)
 
 		// name
@@ -133,6 +135,12 @@ func Bind(data string, param interface{}) error {
 			}
 		}
 
+		// values
+		vals := f.Tag.Get("values")
+		if len(vals) != 0 {
+			values = strings.Split(vals, ",")
+		}
+
 		// msg
 		msg = f.Tag.Get("msg")
 		if len(msg) == 0 {
@@ -157,6 +165,20 @@ func Bind(data string, param interface{}) error {
 		if len(rule) != 0 {
 			if ok, err = chekRule(value, rule); !ok {
 				return fmt.Errorf("%s: %s", name, err)
+			}
+		}
+
+		// check values
+		if values != nil {
+			ok = false
+			for _, v := range values {
+				if value == v {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				return fmt.Errorf("%s out of range [%s]", name, vals)
 			}
 		}
 
