@@ -104,13 +104,19 @@ func Bind(data string, param interface{}) error {
 		// empty
 		val := f.Tag.Get("empty")
 		if len(val) != 0 {
-			s := strings.ToLower(val)
-			if s == "true" {
-				empty = true
-			} else if s == "false" {
+			if val == "0" {
 				empty = false
+			} else if val == "1" {
+				empty = true
 			} else {
-				return fmt.Errorf("empty filed should be true or false")
+				s := strings.ToLower(val)
+				if s == "true" {
+					empty = true
+				} else if s == "false" {
+					empty = false
+				} else {
+					return fmt.Errorf("empty filed should be 0|1 or true|false")
+				}
 			}
 		}
 
@@ -194,33 +200,41 @@ func Bind(data string, param interface{}) error {
 			ok = res.(int) >= int(min) && res.(int) <= int(max)
 		case reflect.Int8:
 			res, err = strconv.ParseInt(value, 10, 8)
+			res = int8(res.(int64))
 			ok = res.(int8) >= int8(min) && res.(int8) <= int8(max)
 		case reflect.Int16:
 			res, err = strconv.ParseInt(value, 10, 16)
+			res = int16(res.(int64))
 			ok = res.(int16) >= int16(min) && res.(int16) <= int16(max)
 		case reflect.Int32:
 			res, err = strconv.ParseInt(value, 10, 32)
+			res = int32(res.(int64))
 			ok = res.(int32) >= int32(min) && res.(int32) <= int32(max)
 		case reflect.Int64:
 			res, err = strconv.ParseInt(value, 10, 64)
 			ok = res.(int64) >= int64(min) && res.(int64) <= int64(max)
 		case reflect.Uint:
 			res, err = strconv.ParseUint(value, 10, 64)
+			res = uint(res.(uint64))
 			ok = res.(uint) >= uint(min) && res.(uint) <= uint(max)
 		case reflect.Uint8:
 			res, err = strconv.ParseUint(value, 10, 8)
+			res = uint8(res.(uint64))
 			ok = res.(uint8) >= uint8(min) && res.(uint8) <= uint8(max)
 		case reflect.Uint16:
 			res, err = strconv.ParseUint(value, 10, 16)
+			res = uint16(res.(uint64))
 			ok = res.(uint16) >= uint16(min) && res.(uint16) <= uint16(max)
 		case reflect.Uint32:
 			res, err = strconv.ParseUint(value, 10, 32)
+			res = uint32(res.(uint64))
 			ok = res.(uint32) >= uint32(min) && res.(uint32) <= uint32(max)
 		case reflect.Uint64:
 			res, err = strconv.ParseUint(value, 10, 64)
 			ok = res.(uint64) >= uint64(min) && res.(uint64) <= uint64(max)
 		case reflect.Float32:
 			res, err = strconv.ParseFloat(value, 32)
+			res = float32(res.(float64))
 			ok = res.(float32) >= float32(min) && res.(float32) <= float32(max)
 		case reflect.Float64:
 			res, err = strconv.ParseFloat(value, 64)

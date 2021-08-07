@@ -1,10 +1,9 @@
 package controller
 
 import (
-	"github.com/lauthrul/goutil/http"
 	"github.com/valyala/fasthttp"
-	"liushubox/common"
 	"liushubox/config"
+	"liushubox/util"
 	"runtime"
 	"time"
 )
@@ -16,5 +15,5 @@ func Ver(ctx *fasthttp.RequestCtx) {
 		"go":   runtime.Version(),
 		"time": time.Now(),
 	}
-	http.Echo(ctx, common.CodeSuccess, "", data)
+	util.EchoSuccess(ctx, data)
 }

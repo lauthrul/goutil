@@ -1,10 +1,17 @@
 package util
 
 import (
+	"github.com/lauthrul/goutil/http"
 	"github.com/lauthrul/goutil/time"
 	"github.com/lauthrul/goutil/validator"
 	"github.com/valyala/fasthttp"
 	"net/url"
+)
+
+const (
+	// http responses
+	CodeFail    = 0
+	CodeSuccess = 1
 )
 
 func init() {
@@ -36,4 +43,12 @@ func Bind(ctx *fasthttp.RequestCtx, param interface{}) error {
 	}
 
 	return validator.Bind(data, param)
+}
+
+func EchoFail(ctx *fasthttp.RequestCtx, msg string) {
+	http.Echo(ctx, CodeFail, msg, nil)
+}
+
+func EchoSuccess(ctx *fasthttp.RequestCtx, data interface{}) {
+	http.Echo(ctx, CodeSuccess, "", data)
 }
